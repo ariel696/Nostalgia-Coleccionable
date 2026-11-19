@@ -1,0 +1,2 @@
+-una buena idea para darle más realismo al sitio, es que los tazos que los jugadores usan (para jugar en este caso) se irán desgastando poco a poco. por ejemplo
+ cada 3 partidas jugadas al tazo le saldrá un pequeñísimo desgaste.

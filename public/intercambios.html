@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intercambios - Nostalgia Coleccionable</title>
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=20261118-14">
+</head>
+<body>
+    <header>
+        <h1>Intercambios</h1>
+    </header>
+    <main>
+        <a href="index.html" class="link-volver">&larr; Volver al inicio</a>
+        <p id="estado-intercambios" class="texto-ayuda">Cargando intercambios...</p>
+
+        <section class="bloque-intercambio" aria-labelledby="t-publicar">
+            <div class="fila-botones-circulares">
+                <!--
+                  Los dos botones ahora muestran un dibujo en vez de texto.
+                  Como ya no hay texto visible, cada uno lleva aria-label (lo leen
+                  los lectores de pantalla) y title (el texto que aparece al dejar
+                  el mouse encima). Los ids y aria-controls no cambian, así que
+                  intercambios.js sigue funcionando igual.
+                -->
+                <button id="btn-abrir-intercambio" class="boton-comprar boton-circular" type="button" aria-expanded="false" aria-controls="form-intercambio" aria-label="Intercambio" title="Intercambio">
+                    <!-- Dibujo: dos flechas en sentidos opuestos (intercambio). aria-hidden: es solo decoración -->
+                    <svg class="icono-boton" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                        <!-- Flecha de arriba: línea y punta apuntando a la derecha -->
+                        <path d="M10 22H52M41 11L52 22L41 33" />
+                        <!-- Flecha de abajo: línea y punta apuntando a la izquierda -->
+                        <path d="M54 42H12M23 31L12 42L23 53" />
+                    </svg>
+                </button>
+                <button id="btn-abrir-mercado" class="boton-comprar boton-circular" type="button" aria-expanded="false" aria-controls="panel-mercado" aria-label="Compra y venta" title="Compra y venta">
+                    <!-- Dibujo: carrito de compras con una moneda ($) cayendo adentro (compra y venta) -->
+                    <svg class="icono-boton icono-boton-relleno" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                        <!-- Carrito: manillar, canasto y base -->
+                        <path class="trazo-carrito" d="M5 12H13L19 40H47L53 21H15" />
+                        <!-- Ruedas del carrito -->
+                        <circle class="rueda-carrito" cx="23" cy="50" r="4.5" />
+                        <circle class="rueda-carrito" cx="43" cy="50" r="4.5" />
+                        <!-- Moneda dorada con el símbolo $ -->
+                        <circle class="moneda-icono" cx="45" cy="15" r="11" />
+                        <text class="texto-moneda-icono" x="45" y="21" text-anchor="middle">$</text>
+                    </svg>
+                </button>
+            </div>
+            <div id="form-intercambio" class="oculto">
+            <h2 id="t-publicar">Publicar un intercambio</h2>
+            <p class="texto-ayuda">Elige un coleccionable tuyo y cuenta qué buscas a cambio. Mientras esté publicado, queda guardado en la oferta.</p>
+            <div class="fila-publicar">
+                <div class="campo-busco" id="campo-ofrezco">
+                    <input id="input-ofrezco" type="text" maxlength="80" autocomplete="off" placeholder="¿Qué ofreces? Ej: Tazo de Pikachu">
+                    <div id="panel-ofrezco" class="panel-catalogo oculto" aria-label="Tus coleccionables"></div>
+                    <div id="ofrezco-elegido" class="busco-elegido oculto"></div>
+                </div>
+                <div class="campo-busco" id="campo-busco">
+                    <input id="input-busco" type="text" maxlength="80" autocomplete="off" placeholder="¿Qué buscas? Ej: Tazo de Charizard">
+                    <div id="panel-catalogo" class="panel-catalogo oculto" aria-label="Objetos que existen hasta ahora"></div>
+                    <div id="busco-elegido" class="busco-elegido oculto"></div>
+                </div>
+                <button id="btn-publicar" class="boton-comprar" type="button">Publicar oferta</button>
+            </div>
+            </div>
+
+            <div id="panel-mercado" class="oculto">
+                <h2>Compra y venta</h2>
+                <p id="mis-monedas" class="texto-ayuda"></p>
+
+                <h3>Vender un coleccionable</h3>
+                <div class="fila-publicar">
+                    <div class="campo-busco" id="campo-vendo">
+                        <input id="input-vendo" type="text" maxlength="80" autocomplete="off" placeholder="¿Qué vendes? Elige uno de tus coleccionables">
+                        <div id="panel-vendo" class="panel-catalogo oculto" aria-label="Tus coleccionables"></div>
+                        <div id="vendo-elegido" class="busco-elegido oculto"></div>
+                    </div>
+                    <input id="input-precio" type="number" min="50" max="100000000" step="50" inputmode="numeric" placeholder="Precio en pesos">
+                    <button id="btn-vender" class="boton-comprar" type="button">Poner en venta</button>
+                </div>
+
+                <h3>En venta ahora</h3>
+                <ul id="lista-mercado" class="lista-intercambios"></ul>
+
+                <h3>Mis ventas</h3>
+                <ul id="lista-mis-ventas" class="lista-intercambios"></ul>
+            </div>
+        </section>
+
+        <section class="bloque-intercambio" aria-labelledby="t-ofertas">
+            <h2 id="t-ofertas">Ofertas abiertas de todos</h2>
+            <ul id="lista-ofertas" class="lista-intercambios"></ul>
+        </section>
+
+        <!--
+          Propuestas enviadas que necesitan una acción tuya (retirar, reclamar o recuperar
+          tu objeto). Está oculta y solo aparece si hay alguna pendiente (ver pintar() en
+          intercambios.js). Ya no hay botón "Ver historial".
+        -->
+        <section id="seccion-propuestas" class="bloque-intercambio oculto" aria-labelledby="t-propuestas">
+            <h2 id="t-propuestas">Mis propuestas enviadas</h2>
+            <ul id="lista-propuestas" class="lista-intercambios"></ul>
+        </section>
+
+        <a href="index.html" class="link-volver">&larr; Volver al inicio</a>
+    </main>
+    <div id="modal-intercambio" class="modal-intercambio oculto" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-intercambio">
+        <div class="modal-intercambio-contenido">
+            <button id="btn-cerrar-modal-intercambio" class="btn-cerrar-modal" type="button" aria-label="Cerrar">×</button>
+            <h2 id="titulo-modal-intercambio">Propuesta de intercambio</h2>
+            <div id="detalle-modal-intercambio"></div>
+            <p id="texto-modal-intercambio" class="texto-ayuda"></p>
+            <div class="acciones-intercambio acciones-modal-intercambio">
+                <button id="btn-aceptar-modal-intercambio" class="boton-comprar" type="button">Aceptar intercambio</button>
+                <button id="btn-rechazar-modal-intercambio" class="boton-secundario" type="button">Rechazar</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="js/intercambios.js?v=20261118-14"></script>
+</body>
+</html>

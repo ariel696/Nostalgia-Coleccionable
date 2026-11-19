@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "nostalgia-coleccionable"
+  },
+  "targets": {
+    "nostalgia-coleccionable": {
+      "hosting": {
+        "principal": [
+          "nostalgia-coleccionable"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

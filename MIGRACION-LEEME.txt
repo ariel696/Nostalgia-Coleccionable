@@ -1,0 +1,42 @@
+NOSTALGIA COLECCIONABLE — COPIA PREPARADA CON CONFIGURACIÓN FIREBASE NUEVA
+
+Esta es una COPIA de trabajo creada desde Infancia-coleccionable.zip.
+El ZIP original y la carpeta original no fueron modificados.
+La carpeta .git del proyecto anterior se omitió para no heredar su historial/remotos.
+
+CAMBIOS REALIZADOS
+- Se conservaron las páginas, CSS, JavaScript, imágenes, reglas y archivos de configuración.
+- Se actualizaron los nombres visibles en HTML a “Nostalgia Coleccionable”.
+- Se actualizaron los valores de firebaseConfig en los archivos JavaScript del sitio al proyecto nuevo.
+- Se actualizó .firebaserc para que el proyecto por defecto sea nostalgia-coleccionable
+  y el target de Hosting “principal” apunte al sitio “nostalgia-coleccionable”.
+- firebase.json conserva el target “principal” y el directorio público “public”.
+
+PROYECTO NUEVO
+- projectId: nostalgia-coleccionable
+- authDomain: nostalgia-coleccionable.firebaseapp.com
+- storageBucket: nostalgia-coleccionable.firebasestorage.app
+- messagingSenderId: 971467965546
+- appId: 1:971467965546:web:19259f96688d78abf13613
+
+IMPORTANTE — NO DESPLEGAR TODAVÍA
+- No se ejecutó firebase deploy ni se modificó Firebase en la nube.
+- No se migraron usuarios de Authentication ni documentos de Firestore.
+- Las reglas de Firestore se conservaron del proyecto anterior y deben revisarse antes de publicar.
+- Cloudinary conserva su configuración previa; no se modificó.
+- Antes de probar login, agregar el dominio nostalgia-coleccionable.web.app en Authentication
+  > Settings > Authorized domains (si no aparece ya).
+- Antes de usar datos, crear/validar Firestore Database en el proyecto nuevo y migrar
+  los datos necesarios (usuarios, productos, perfilesPublicos, etc.) desde el proyecto anterior.
+- Revisar las reglas de Firestore para las colecciones realmente usadas.
+- La configuración web contiene una API key de Firebase de uso público para identificar la app;
+  la seguridad depende de reglas de Firestore, dominios autorizados y controles del proyecto.
+
+SIGUIENTE PASO
+1. Abrir esta copia en VS Code.
+2. Revisar los cambios.
+3. Configurar Authentication y Firestore en el proyecto nuevo.
+4. Migrar datos de forma controlada.
+5. Probar localmente antes de desplegar.
+
+NO BORRAR NI DESACTIVAR EL PROYECTO ANTIGUO.

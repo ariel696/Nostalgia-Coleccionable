@@ -1,0 +1,123 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.email == "arielriquelme08@gmail.com";
+    }
+
+    match /productos/{productoId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /usuarios/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow update: if signedIn() && (
+        request.auth.uid == userId ||
+        isAdmin() ||
+        (
+          get(/databases/$(database)/documents/referidos/$(request.auth.uid)).data.referrerUid == userId &&
+          request.resource.data.monedas == resource.data.monedas + 10
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /perfilesPublicos/{userId} {
+      allow read: if true;
+      allow create, update: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow delete: if signedIn() && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Cada nombre/código de referido ocupa un documento propio, por lo que
+    // dos usuarios no pueden reservar exactamente el mismo código.
+    match /nombresUsuario/{nombreUsuario} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && !exists(/databases/$(database)/documents/nombresUsuario/$(nombreUsuario));
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    match /codigosReferido/{codigo} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.usado == false
+        && request.resource.data.expiraEn > request.time;
+      allow update: if signedIn()
+        && resource.data.uid != request.auth.uid
+        && resource.data.usado == false
+        && request.resource.data.usado == true
+        && request.resource.data.usadoPor == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // Una invitación solo puede registrarla la persona invitada, una vez,
+    // y el código debe pertenecer a otro usuario real.
+    match /referidos/{referidoUid} {
+      allow read: if signedIn() && (request.auth.uid == referidoUid || isAdmin());
+      allow create: if signedIn()
+        && request.auth.uid == referidoUid
+        && request.resource.data.referidoUid == request.auth.uid
+        && request.resource.data.referrerUid != request.auth.uid
+        && get(/databases/$(database)/documents/codigosReferido/$(request.resource.data.codigo)).data.uid == request.resource.data.referrerUid
+        && !exists(/databases/$(database)/documents/referidos/$(referidoUid));
+      allow update, delete: if isAdmin();
+    }
+
+    // El catálogo de imágenes se puede consultar desde las páginas públicas,
+    // pero solo la cuenta administradora puede modificarlo.
+    match /assets/{assetId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Las ofertas abiertas se muestran a usuarios autenticados. El objeto
+    // queda depositado en la oferta y solo su propietario puede crearla,
+    // cancelarla o cerrarla como parte de un intercambio.
+    match /intercambios/{intercambioId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if signedIn() && (resource.data.ownerUid == request.auth.uid || isAdmin());
+    }
+
+    // Una propuesta la puede crear quien ofrece el objeto. La pueden leer o
+    // actualizar las dos partes del intercambio: quien propone y el dueño de
+    // la oferta.
+    match /propuestasIntercambio/{propuestaId} {
+      allow read: if signedIn() &&
+        (resource.data.fromUid == request.auth.uid || resource.data.ownerUid == request.auth.uid || isAdmin());
+      allow create: if signedIn() && request.resource.data.fromUid == request.auth.uid;
+      allow update: if signedIn() &&
+        (resource.data.fromUid == request.auth.uid || resource.data.ownerUid == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Las ventas abiertas son visibles para usuarios autenticados. El
+    // propietario administra su publicación y el comprador puede completar
+    // la compra o reclamarla según el flujo de la aplicación.
+    match /ventas/{ventaId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if signedIn() &&
+        (resource.data.ownerUid == request.auth.uid ||
+         (
+           resource.data.estado == "abierta" &&
+           request.resource.data.estado == "vendida" &&
+           request.resource.data.compradorUid == request.auth.uid
+         ) ||
+         isAdmin());
+      allow delete: if isAdmin();
+    }
+  }
+}

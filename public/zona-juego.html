@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zona Juego - Nostalgia Coleccionable</title>
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=20260925-22">
+</head>
+<body>
+    <header>
+        <h1>Zona Juego</h1>
+    </header>
+    <main>
+        <a href="index.html" class="link-volver">&larr; Volver al inicio</a>
+
+        <section class="bloque-intercambio" aria-labelledby="t-zona-juego">
+            <h2 id="t-zona-juego">Elige un juego</h2>
+            <!--
+              Lista de juegos. Para agregar uno nuevo, copia un <a class="boton-juego">
+              completo, cambia el enlace (href), el dibujo y el nombre.
+            -->
+            <div class="grilla-juegos">
+                <a class="boton-juego" href="zona-juego-tazos.html">
+                    <!-- Dibujo: un tazo (disco con anillos). Es decoración: aria-hidden -->
+                    <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                        <circle class="tazo-borde" cx="32" cy="32" r="28" />
+                        <circle class="tazo-anillo" cx="32" cy="32" r="20" />
+                        <circle class="tazo-centro" cx="32" cy="32" r="9" />
+                    </svg>
+                    <span>Tazos</span>
+                </a>
+            </div>
+        </section>
+
+        <a href="index.html" class="link-volver">&larr; Volver al inicio</a>
+    </main>
+</body>
+</html>

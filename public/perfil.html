@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil - Nostalgia Coleccionable</title>
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=20261118-10">
+</head>
+<body>
+    <header>
+        <h1 id="titulo-perfil">Perfil</h1>
+    </header>
+    <main>
+        <a href="index.html" class="link-volver">&larr; Volver al inicio</a>
+
+        <p id="estado-perfil" class="texto-ayuda">Cargando perfil...</p>
+
+        <section id="cabecera-perfil" class="cabecera-perfil oculto" aria-labelledby="nombre-perfil">
+            <img id="foto-perfil" class="foto-perfil" alt="Foto de perfil">
+            <div class="datos-perfil">
+                <h2 id="nombre-perfil"></h2>
+                <p id="descripcion-perfil">Muro de coleccionables y objetos</p>
+                <a id="link-inventario-privado" class="link-perfil oculto" href="coleccion.html">Ver mi inventario</a>
+            </div>
+            <button id="btn-ajustes" class="boton-ajustes oculto" type="button" aria-label="Ajustes y datos de mi cuenta" title="Ajustes y datos de mi cuenta">&#9881;&#xFE0E;</button>
+        </section>
+
+        <!-- Exhibidor: 3 casillas fijas; el dueño agrega, cambia o quita un tazo en cualquiera de ellas -->
+        <section id="seccion-exhibidor" class="seccion-muro seccion-exhibidor oculto" aria-labelledby="titulo-exhibidor">
+            <div class="cabecera-exhibidor">
+                <h2 id="titulo-exhibidor">Exhibidor</h2>
+                <button id="btn-ajustes-exhibidor" class="boton-ajustes-exhibidor oculto" type="button" aria-label="Editar exhibidor" aria-pressed="false" title="Editar exhibidor">&#9881;&#xFE0E;</button>
+            </div>
+            <ul id="muro-exhibidor" class="lista-muro lista-exhibidor"></ul>
+        </section>
+
+        <section class="seccion-muro" aria-labelledby="titulo-muro-coleccionables">
+            <h2 id="titulo-muro-coleccionables">Mis cositas</h2>
+            <ul id="muro-coleccionables" class="lista-muro"></ul>
+        </section>
+
+        <a href="index.html" class="link-volver">&larr; Volver al inicio</a>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="js/recorte-coleccionable.js?v=20261117-1"></script>
+    <script src="js/perfil.js?v=20261118-21"></script>
+</body>
+</html>
+

@@ -1,0 +1,3745 @@
+/*
+  ===========================================
+  style.css - Hoja de estilos de Colecciones de ayer y hoy
+  ===========================================
+
+  Escrito con enfoque MOBILE-FIRST: todas las reglas de acá abajo
+  están pensadas primero para pantalla chica (celular). Recién al
+  final agregamos una @media query que "agranda" cosas para
+  pantallas de 700px o más (tablet/notebook).
+
+  Identidad visual: paleta cálida "de kiosco de barrio ochentero/
+  noventero" (crema tipo papel viejo, mostaza/dorado, rojo cereza,
+  verde menta de acento) + tipografía Baloo 2 (títulos, redondeada,
+  con onda de sticker) + Inter (texto, bien legible).
+*/
+
+/* -----------------------------------------------------------------
+   1) VARIABLES DE CSS (:root)
+   -----------------------------------------------------------------
+   Acá definimos, UNA sola vez, todos los colores y valores que
+   vamos a reutilizar en el archivo. Si mañana querés cambiar el
+   rojo principal de toda la página, cambiás UNA línea acá y se
+   actualiza en todos lados donde se usa var(--color-rojo-cereza).
+   ":root" es un selector especial que representa "todo el documento",
+   así estas variables quedan disponibles para cualquier regla de
+   acá para abajo.
+------------------------------------------------------------------ */
+:root {
+  /* Colores base */
+  --color-crema: #F4EAD3;        /* fondo general, tipo papel viejo */
+  --color-papel: #FFF8E7;        /* fondo de tarjetas, un poco más claro */
+  --color-mostaza: #E6A93B;      /* dorado/mostaza, tipo paquete de papas fritas */
+  --color-mostaza-oscuro: #C88A22;
+  --color-rojo-cereza: #C6402E;  /* color principal de acento (botones, títulos) */
+  --color-rojo-cereza-oscuro: #A2321F;
+  --color-verde-menta: #6FC6A3;  /* acento secundario, para contrastar con el rojo */
+  --color-verde-menta-oscuro: #4FA382;
+  --color-texto: #3B2E20;        /* casi negro, pero cálido (no gris frío) */
+  --color-texto-suave: #7A6A54;  /* para texto secundario, menos protagonista */
+  --color-blanco: #FFFDF7;
+
+  /* Tipografías */
+  --fuente-titulos: "Baloo 2", cursive;
+  --fuente-texto: "Inter", sans-serif;
+
+  /* Otros valores reutilizables */
+  --radio-borde: 16px;
+  --radio-borde-chico: 10px;
+  --sombra-tarjeta: 0 4px 14px rgba(59, 46, 32, 0.15);
+  --alto-tactil: 48px; /* alto mínimo recomendado para botones/links tocables */
+  --ancho-contenido: 480px; /* ancho máximo del contenido en mobile */
+}
+
+/* -----------------------------------------------------------------
+   2) RESET BÁSICO
+   -----------------------------------------------------------------
+   Cada navegador trae sus propios márgenes/paddings por defecto en
+   ciertas etiquetas (body, h1, ul, etc.), y no son iguales entre
+   todos. Este reset chico nos da un punto de partida limpio e
+   igual en todos lados, para no pelearnos con sorpresas.
+------------------------------------------------------------------ */
+* {
+  box-sizing: border-box;
+  /*
+    "border-box" cambia cómo se calcula el ancho/alto de cada
+    elemento: el padding y el borde quedan INCLUIDOS dentro del
+    ancho que vos definís, en vez de sumarse aparte. Es el
+    comportamiento que casi todo el mundo espera de forma intuitiva,
+    y evita que un elemento "se rompa" el layout por tener padding.
+  */
+  margin: 0;
+  padding: 0;
+}
+
+/* -----------------------------------------------------------------
+   3) ESTILOS GENERALES DEL DOCUMENTO
+   ------------------------------------------------------------------ */
+body {
+  background-color: var(--color-crema);
+  color: var(--color-texto);
+  font-family: var(--fuente-texto);
+  line-height: 1.5;
+  /*
+    "line-height: 1.5" separa un poco las líneas de texto entre sí
+    (1.5 veces el tamaño de la letra). Mejora mucho la legibilidad,
+    sobre todo en pantallas chicas.
+  */
+  -webkit-font-smoothing: antialiased;
+}
+
+.oculto {
+  display: none !important;
+  /*
+    "display: none" hace que el navegador trate a este elemento como
+    si no existiera: no se ve, y tampoco ocupa espacio en la página.
+    Clase de utilidad: la usamos desde JavaScript para mostrar/ocultar
+    lo que necesitemos en cada momento.
+  */
+}
+
+/* Mientras Firebase comprueba una sesión guardada, no mostramos por error
+   el botón de iniciar sesión. El espacio se conserva para evitar saltos. */
+body.auth-cargando #btn-accion-principal {
+  visibility: hidden;
+}
+
+/* -----------------------------------------------------------------
+   4) ENCABEZADO (header)
+   -----------------------------------------------------------------
+   El header es lo primero que se ve al entrar: le damos el color
+   mostaza como protagonista, con el título en Baloo 2, y un borde
+   inferior en rojo cereza como si fuera el "cintillo" de un envase.
+------------------------------------------------------------------ */
+header {
+  position: relative;
+  /*
+    "position: relative" no mueve nada del header en sí, pero convierte
+    a este header en el "marco de referencia" para cualquier hijo que
+    use "position: absolute" (como el link de "Mi colección" de más
+    abajo). Sin esta línea, ese link se posicionaría respecto a toda
+    la página en vez de respecto al header.
+  */
+  background-color: var(--color-mostaza);
+  border-bottom: 5px solid var(--color-rojo-cereza);
+  padding: 20px 16px;
+  text-align: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+}
+
+header h1 {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-weight: 700;
+  color: var(--color-blanco);
+  font-size: 1.6rem;
+  /*
+    "rem" es una unidad relativa al tamaño de fuente base del
+    navegador (normalmente 16px). Usamos rem en vez de px para el
+    texto porque respeta si el usuario configuró una letra más
+    grande por accesibilidad; con px eso se ignoraría.
+  */
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+  letter-spacing: 0.5px;
+}
+
+header h1 span {
+  display: block;
+}
+
+/* -----------------------------------------------------------------
+   5) CONTENIDO PRINCIPAL (main)
+   ------------------------------------------------------------------ */
+main {
+  max-width: var(--ancho-contenido);
+  margin: 0 auto;
+  /*
+    "margin: 0 auto" centra el bloque horizontalmente: 0 arriba/abajo,
+    y "auto" a los costados hace que el navegador reparta el espacio
+    sobrante en partes iguales a izquierda y derecha.
+  */
+  padding: 24px 16px 40px;
+}
+
+#hero {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
+  /*
+    "gap" define el espacio entre los elementos hijos del flexbox,
+    sin necesidad de andar poniendo margin manualmente en cada uno.
+    Lo subimos a 20px (antes 14px) porque ahora el hero tiene pocos
+    hijos "grandes" (la tarjeta de saldo, el grupo de acciones, el
+    panel de recarga y el botón de cerrar sesión), y conviene que se
+    note un espacio más claro ENTRE esos bloques que el que hay
+    DENTRO de cada uno.
+  */
+}
+
+/* -----------------------------------------------------------------
+   5.1) TARJETA DE SALDO
+   -----------------------------------------------------------------
+   Agrupa el saludo, el botón de "regalo diario" y el contador de
+   monedas dentro de una misma caja visual, para que se lean como
+   "un solo tema" en vez de líneas sueltas una debajo de la otra.
+------------------------------------------------------------------ */
+.tarjeta-saldo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  background-color: var(--color-papel);
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-tarjeta);
+  padding: 16px;
+}
+
+/* -----------------------------------------------------------------
+   5.2) GRUPO DE ACCIONES PRINCIPALES
+   -----------------------------------------------------------------
+   "Mi colección" y "A comprar" son las dos acciones de navegación
+   más importantes de la página: las mostramos juntas, del mismo
+   tamaño, para que el usuario las lea como "las dos cosas que puedo
+   hacer ahora", en vez de dos botones sueltos y descoordinados.
+------------------------------------------------------------------ */
+.grupo-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#estado-usuario {
+  font-weight: 600;
+  font-size: 1.05rem;
+  min-height: 1.3rem;
+  /*
+    "min-height" evita que la página "salte" (cambie de tamaño de
+    golpe) cuando JavaScript le agrega el texto de "Hola, Nombre".
+    Reservamos el espacio de antemano, aunque esté vacío.
+  */
+}
+
+#monedas-usuario {
+  display: none;
+  align-self: flex-start;
+  background-color: var(--color-papel);
+  border: 2px solid var(--color-mostaza-oscuro);
+  border-radius: 999px;
+  /* 999px es un truco común para lograr una forma de "píldora": un
+     radio tan grande que redondea completamente los extremos. */
+  padding: 6px 14px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-mostaza-oscuro);
+  min-height: 0;
+}
+
+#monedas-usuario:not(:empty) {
+  display: inline-block;
+  /*
+    ":not(:empty)" aplica esta regla SOLO cuando el párrafo tiene
+    contenido adentro. Así, cuando está vacío (nadie logeado), no
+    se ve la "píldora" flotando sin sentido.
+  */
+  margin-bottom: 4px;
+}
+
+/* -----------------------------------------------------------------
+   6) BOTONES Y LINKS DE ACCIÓN
+   -----------------------------------------------------------------
+   Estilamos juntos el botón principal y el link "Mi colección"
+   porque comparten la misma lógica de "área tocable cómoda": alto
+   mínimo de 48px, texto centrado, esquinas redondeadas.
+------------------------------------------------------------------ */
+#btn-accion-principal,
+#btn-dinero-diario,
+#link-mi-coleccion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--alto-tactil);
+  border-radius: var(--radio-borde-chico);
+  font-family: var(--fuente-texto);
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  /*
+    "transition" hace que los cambios (por ejemplo, al pasar el
+    mouse) se vean suaves en vez de instantáneos y bruscos.
+  */
+}
+
+#btn-accion-principal {
+  background-color: var(--color-rojo-cereza);
+  color: var(--color-blanco);
+  width: 100%;
+}
+
+#btn-dinero-diario {
+  background-color: var(--color-mostaza);
+  color: var(--color-texto);
+  width: 100%;
+}
+
+#btn-dinero-diario:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.2) opacity(0.65);
+}
+
+/* -----------------------------------------------------------------
+   6.1) BOTÓN ILUSTRADO DEL REGALO DIARIO
+   -----------------------------------------------------------------
+   Va arriba de "Agarrar dinero diario", como una versión visual del
+   mismo botón (una mano ofreciendo monedas). No lo agrupamos con la
+   regla de arriba porque es redondo y de tamaño fijo, no un botón de
+   ancho completo con texto.
+------------------------------------------------------------------ */
+.btn-regalo-diario {
+  align-self: center;
+  width: 128px;
+  height: 104px;
+  padding: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.btn-regalo-diario svg {
+  width: 100%;
+  height: 100%;
+}
+
+.btn-regalo-diario:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.35) opacity(0.6);
+}
+
+.btn-regalo-diario:not(:disabled):hover {
+  transform: scale(1.04);
+  filter: brightness(1.05);
+}
+
+.btn-regalo-diario:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+#btn-accion-principal:hover {
+  filter: brightness(1.08);
+}
+
+#btn-dinero-diario:not(:disabled):hover {
+  filter: brightness(1.06);
+}
+
+/* El regalo diario queda centrado debajo de las monedas. */
+.tarjeta-saldo #btn-dinero-diario {
+  align-self: center;
+  width: min(100%, 280px);
+  text-align: center;
+}
+
+.tarjeta-saldo #estado-dinero-diario {
+  align-self: center;
+  width: 100%;
+  text-align: center;
+}
+
+#btn-accion-principal:active {
+  transform: scale(0.98);
+  /*
+    Al presionar el botón, lo achicamos apenas un 2%. Es un detalle
+    chico, pero le da al botón una sensación "física", como si de
+    verdad lo estuvieras hundiendo.
+  */
+}
+
+#link-mi-coleccion {
+  background-color: var(--color-verde-menta);
+  color: var(--color-texto);
+}
+
+#btn-cerrar-sesion {
+  align-self: center;
+  width: auto;
+  min-height: 0;
+  padding: 10px 16px;
+  background-color: transparent;
+  color: var(--color-texto-suave);
+  border: none;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  /*
+    Antes tenía el mismo tamaño y peso visual (borde grueso, alto
+    táctil completo) que "Mi colección" y "A comprar", así que
+    competía con ellos por la atención aunque sea una acción que se
+    usa poco. Ahora es un texto discreto y centrado, típico de
+    "cerrar sesión" en cualquier app: sigue siendo fácil de tocar
+    (padding generoso) pero no se roba protagonismo.
+  */
+}
+
+#btn-cerrar-sesion:hover {
+  color: var(--color-rojo-cereza);
+}
+
+#link-mi-coleccion:hover {
+  filter: brightness(1.05);
+}
+
+/* -----------------------------------------------------------------
+   6.2) "MI COLECCIÓN" COMO ACCESO DIRECTO EN EL HEADER
+   -----------------------------------------------------------------
+   Esta regla es más específica que la de la línea 236 (que le puso
+   display:flex, min-height, etc. junto a los otros botones), así que
+   la pisa: acá lo achicamos y lo "sacamos" del flujo normal con
+   position:absolute para que flote fijo en la esquina del header,
+   como el ícono de perfil/muro de una app.
+------------------------------------------------------------------ */
+header #link-mi-coleccion {
+  position: static;
+  grid-column: 2;
+  grid-row: 1;
+  margin-top: 0;
+  transform: none;
+  min-height: 0;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  box-shadow: var(--sombra-tarjeta);
+  /*
+    "999px" de radio + poco padding = forma de píldora chica, distinta
+    a los botones grandes de abajo, para que se lea como un accesorio
+    del header ("mi perfil") y no como una acción más de la página.
+  */
+}
+
+header #link-mi-coleccion:hover {
+  transform: scale(1.04);
+  /*
+    Repetimos el translateY acá porque "transform" reemplaza el valor
+    anterior en vez de sumarlo: si solo pusiéramos "scale(1.04)" en el
+    hover, perderíamos el centrado vertical del estado normal.
+  */
+}
+
+/* -----------------------------------------------------------------
+   7) ESCENA DE RECOMPENSA (regalo diario)
+   ------------------------------------------------------------------ */
+#escena-recompensa {
+  background-color: var(--color-papel);
+  border: 3px solid var(--color-mostaza);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-tarjeta);
+  padding: 16px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+#escena-recompensa img {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  border-radius: var(--radio-borde-chico);
+  display: block;
+  margin: 0 auto;
+  /*
+    "max-width: 320px" evita que la imagen se vea gigante en
+    pantallas grandes, y "width: 100%" evita que se desborde en
+    pantallas chicas. "height: auto" mantiene la proporción original
+    de la imagen (así no se ve estirada ni achatada).
+  */
+}
+
+/* -----------------------------------------------------------------
+   8) LISTA DE COLECCIONABLES (coleccion.html)
+   ------------------------------------------------------------------ */
+#estado-carga {
+  text-align: center;
+  color: var(--color-texto-suave);
+  font-weight: 500;
+  padding: 24px 0;
+}
+
+#lista-coleccionables,
+#lista-inventario {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+#lista-coleccionables li,
+#lista-inventario li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--color-papel);
+  border-left: 5px solid var(--color-rojo-cereza);
+  border-radius: var(--radio-borde-chico);
+  padding: 14px;
+  box-shadow: var(--sombra-tarjeta);
+  font-weight: 500;
+}
+
+
+.imagen-coleccionable {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  object-fit: contain;
+  border: 2px solid var(--color-mostaza);
+  border-radius: 50%;
+  background-color: var(--color-blanco);
+}
+
+.contenido-coleccionable {
+  min-width: 0;
+}
+
+.modal-premio {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background-color: rgba(59, 46, 32, 0.72);
+}
+
+.modal-premio-contenido {
+  width: min(100%, 560px);
+  max-height: 92vh;
+  overflow: auto;
+  background-color: var(--color-papel);
+  border: 3px solid var(--color-mostaza);
+  border-radius: var(--radio-borde);
+  box-shadow: 0 18px 40px rgba(59, 46, 32, 0.35);
+  padding: 20px;
+  text-align: center;
+}
+
+.modal-premio-contenido h2 {
+  font-family: var(--fuente-titulos);
+  color: var(--color-rojo-cereza);
+  font-size: 1.55rem;
+  margin-bottom: 6px;
+}
+
+.modal-premio-contenido p {
+  color: var(--color-texto-suave);
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.modal-premio-tazos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.tarjeta-tazo-premio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background-color: var(--color-blanco);
+  border: 2px solid var(--color-verde-menta);
+  border-radius: var(--radio-borde-chico);
+}
+
+.imagen-tazo-premio {
+  width: min(180px, 70vw);
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.tarjeta-tazo-premio strong {
+  color: var(--color-texto);
+  line-height: 1.25;
+}
+
+.numero-tazo-premio {
+  margin-top: -6px;
+  color: #8A8A8A;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.modal-lugares {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background-color: rgba(59, 46, 32, 0.72);
+}
+
+.modal-lugares-contenido {
+  position: relative;
+  width: min(100%, 720px);
+  max-height: 92vh;
+  overflow: auto;
+  background-color: var(--color-papel);
+  border: 3px solid var(--color-mostaza);
+  border-radius: var(--radio-borde);
+  box-shadow: 0 18px 40px rgba(59, 46, 32, 0.35);
+  padding: 20px;
+}
+
+.modal-lugares-contenido h2 {
+  padding-right: 42px;
+  font-family: var(--fuente-titulos);
+  color: var(--color-rojo-cereza);
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.btn-cerrar-modal {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--color-rojo-cereza);
+  border-radius: 50%;
+  background-color: transparent;
+  color: var(--color-rojo-cereza);
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.grilla-lugares-compra {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.tarjeta-lugar-compra {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 3px solid var(--color-mostaza);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-blanco);
+  box-shadow: var(--sombra-tarjeta);
+  color: var(--color-texto);
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tarjeta-lugar-compra:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(59, 46, 32, 0.2);
+}
+
+.tarjeta-lugar-compra img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background-color: var(--color-papel);
+}
+
+.tarjeta-lugar-compra span {
+  padding: 12px;
+  font-family: var(--fuente-titulos);
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-align: center;
+  color: var(--color-rojo-cereza);
+}
+
+.link-admin-modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: var(--alto-tactil);
+  margin-top: 16px;
+  border: 2px dashed var(--color-verde-menta-oscuro);
+  border-radius: var(--radio-borde-chico);
+  color: var(--color-verde-menta-oscuro);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+/* -----------------------------------------------------------------
+   9) TÍTULOS Y LINKS GENÉRICOS (aplica en cualquier página)
+   ------------------------------------------------------------------ */
+main h1 {
+  font-family: var(--fuente-titulos);
+  color: var(--color-rojo-cereza);
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+}
+
+main > a {
+  /*
+    Selector "main > a": links que son HIJOS DIRECTOS de <main>
+    (como el "Volver al inicio" de tienda.html y coleccion.html).
+    No afecta a links que estén adentro de otras cajas, como
+    #link-mi-coleccion, que ya tiene sus propios estilos arriba.
+  */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--alto-tactil);
+  padding: 0 18px;
+  margin-top: 16px;
+  color: var(--color-rojo-cereza);
+  font-weight: 600;
+  text-decoration: none;
+  border: 2px solid var(--color-rojo-cereza);
+  border-radius: var(--radio-borde-chico);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+main > a:hover {
+  background-color: var(--color-rojo-cereza);
+  color: var(--color-blanco);
+}
+
+/* -----------------------------------------------------------------
+   9.1) TIENDA: grilla de productos (tienda.html)
+   -----------------------------------------------------------------
+   "grilla-productos" arma un grid que hoy tiene una sola columna
+   (ideal para celular, un producto abajo del otro) y que en la
+   media query de más abajo pasa a 2 columnas para pantallas más
+   anchas, para aprovechar el espacio.
+------------------------------------------------------------------ */
+.grilla-productos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.tarjeta-producto {
+  /*
+    Esta es la tarjeta-botón del "envase de comida" que pediste: una
+    etiqueta <a> (link) a la que le damos pinta de tarjeta grande y
+    tocable con CSS, en vez de un link de texto suelto.
+  */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--color-papel);
+  border: 3px solid var(--color-mostaza);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-tarjeta);
+  padding: 16px;
+  text-decoration: none;
+  color: var(--color-texto);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tarjeta-producto:hover {
+  transform: translateY(-3px);
+  /* Al pasar el mouse, la tarjeta "flota" apenas 3px hacia arriba,
+     dando la sensación de que se puede levantar/tocar. */
+  box-shadow: 0 8px 18px rgba(59, 46, 32, 0.2);
+}
+
+.tarjeta-producto:active {
+  transform: scale(0.98);
+}
+
+.tarjeta-admin-vacia {
+  min-height: var(--alto-tactil);
+  justify-content: center;
+  border-style: dashed;
+  color: var(--color-verde-menta-oscuro);
+  font-weight: 800;
+  text-align: center;
+}
+
+.imagen-producto {
+  width: 100%;
+  max-width: 240px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radio-borde-chico);
+  /*
+    Todas las fotos comparten el mismo marco 4:3. "object-fit: cover"
+    recorta lo que sobra en vez de estirar la foto, así todas las
+    tarjetas quedan alineadas sin importar el tamaño original.
+  */
+}
+
+.nombre-producto {
+  font-family: var(--fuente-titulos);
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-align: center;
+  color: var(--color-rojo-cereza);
+}
+
+/* -----------------------------------------------------------------
+   9.2) TIENDA-CHEETOS: link para volver y monedas disponibles
+   ------------------------------------------------------------------ */
+.link-volver {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--color-texto-suave);
+  font-weight: 600;
+  text-decoration: none;
+  min-height: 0;
+  /*
+    "min-height: 0" acá es a propósito: este link chico de "volver"
+    NO necesita el alto táctil de 48px como los botones grandes,
+    porque no es la acción principal de la página. Igual sigue
+    siendo perfectamente tocable por su padding natural del texto.
+  */
+}
+
+.link-volver:hover {
+  color: var(--color-rojo-cereza);
+}
+
+.link-editar-lugar {
+  display: inline-flex;
+  min-height: 0;
+  margin: 0 0 16px 8px;
+  padding: 5px 10px;
+  border: 1px dashed var(--color-verde-menta-oscuro);
+  border-radius: 999px;
+  color: var(--color-verde-menta-oscuro);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.link-editar-lugar:hover {
+  background-color: rgba(79, 163, 130, 0.12);
+}
+
+#monedas-disponibles {
+  display: inline-block;
+  background-color: var(--color-papel);
+  border: 2px solid var(--color-mostaza-oscuro);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 600;
+  color: var(--color-mostaza-oscuro);
+  margin-bottom: 8px;
+}
+
+.texto-ayuda {
+  color: var(--color-texto-suave);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+/* -----------------------------------------------------------------
+   9.3) TIENDA-CHEETOS: grilla de opciones (tazos) y botón de compra
+   ------------------------------------------------------------------ */
+.grilla-opciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.tarjeta-opcion {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 0 18px;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.vista-producto-comprable {
+  appearance: none;
+  position: relative;
+  width: min(100%, 190px);
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  background-color: transparent;
+  outline: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.16s ease, filter 0.16s ease;
+}
+
+.vista-producto-comprable:focus-visible {
+  box-shadow: 0 0 0 3px rgba(79, 163, 130, 0.35);
+  border-radius: var(--radio-borde);
+}
+
+.vista-producto-comprable:hover {
+  transform: translateY(-3px) scale(1.015);
+}
+
+.vista-producto-comprable:active {
+  transform: scale(0.985);
+}
+
+.vista-producto-comprable.sin-imagen {
+  width: min(100%, 190px);
+  min-height: 0;
+  padding: 14px;
+  background-color: rgba(255, 248, 232, 0.85);
+  border: 2px dashed var(--color-mostaza);
+  border-radius: var(--radio-borde);
+}
+
+.imagen-opcion {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 14px rgba(59, 46, 32, 0.2));
+}
+
+.descripcion-opcion {
+  position: absolute;
+  inset: auto 10px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 12px;
+  color: var(--color-blanco);
+  background: rgba(59, 46, 32, 0.82);
+  border-radius: var(--radio-borde-chico);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  pointer-events: none;
+}
+
+.vista-producto-comprable:hover .descripcion-opcion,
+.vista-producto-comprable:focus .descripcion-opcion,
+.vista-producto-comprable:focus-within .descripcion-opcion {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.nombre-opcion {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.descripcion-opcion span {
+  font-size: 0.86rem;
+  line-height: 1.25;
+}
+
+.vista-producto-comprable.sin-imagen .descripcion-opcion {
+  position: static;
+  color: var(--color-texto);
+  background: transparent;
+  padding: 0;
+  opacity: 1;
+  transform: none;
+}
+
+.vista-producto-comprable.sin-imagen .nombre-opcion {
+  color: var(--color-rojo-cereza);
+  font-family: var(--fuente-titulos);
+  font-size: 1.25rem;
+}
+
+.vista-producto-comprable.sin-imagen .descripcion-opcion span {
+  color: var(--color-texto-suave);
+}
+
+.compra-producto {
+  display: flex;
+  width: min(100%, 190px);
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.precio-opcion {
+  color: var(--color-mostaza-oscuro);
+  font-weight: 800;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.boton-comprar {
+  min-height: var(--alto-tactil);
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-rojo-cereza);
+  color: var(--color-blanco);
+  font-family: var(--fuente-texto);
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.boton-comprar:hover {
+  filter: brightness(1.08);
+}
+
+.boton-comprar:active {
+  transform: scale(0.96);
+}
+
+/* -----------------------------------------------------------------
+   9.4) LINK "ADMINISTRAR PRODUCTOS" (index.html)
+   -----------------------------------------------------------------
+   Reutiliza la misma "forma" que los otros botones grandes (mismo
+   alto táctil), pero con un color distinto (verde menta oscuro
+   sobre fondo transparente con borde) para que se note que es una
+   acción distinta y "de bambalinas", no la acción principal del
+   usuario común.
+------------------------------------------------------------------ */
+#link-admin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--alto-tactil);
+  border: 2px dashed var(--color-verde-menta-oscuro);
+  border-radius: var(--radio-borde-chico);
+  color: var(--color-verde-menta-oscuro);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+#link-admin:hover {
+  background-color: var(--color-verde-menta-oscuro);
+  color: var(--color-blanco);
+}
+
+/* -----------------------------------------------------------------
+   9.5) PANEL DE ADMINISTRACIÓN (admin.html)
+   ------------------------------------------------------------------ */
+.bloque-admin {
+  background-color: var(--color-papel);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-tarjeta);
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.bloque-admin h2 {
+  font-family: var(--fuente-titulos);
+  color: var(--color-rojo-cereza);
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+
+.bloque-admin h3 {
+  font-size: 1rem;
+  margin: 16px 0 8px;
+  color: var(--color-texto);
+}
+
+#form-nuevo-producto label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 12px 0 4px;
+}
+
+#form-nuevo-producto input[type="text"],
+#form-nuevo-producto input[type="number"] {
+  width: 100%;
+  min-height: var(--alto-tactil);
+  padding: 0 12px;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  font-family: var(--fuente-texto);
+  font-size: 1rem;
+  background-color: var(--color-blanco);
+  color: var(--color-texto);
+}
+
+#form-nuevo-producto input:focus {
+  outline: none;
+  border-color: var(--color-rojo-cereza);
+  /*
+    "outline: none" saca el contorno azul por defecto del navegador,
+    pero OJO: lo reemplazamos inmediatamente por otra señal visual
+    clara (el borde cambia a rojo cereza). Nunca hay que sacar el
+    indicador de foco sin poner otro en su lugar, porque quienes
+    navegan con teclado dependen de él para saber dónde están
+    parados.
+  */
+}
+
+/* NUEVO: input de tipo archivo (subida de imagen a Cloudinary) */
+#form-nuevo-producto input[type="file"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px dashed var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  font-family: var(--fuente-texto);
+  font-size: 0.9rem;
+  background-color: var(--color-blanco);
+  color: var(--color-texto-suave);
+  /*
+    Borde "dashed" (punteado) en vez del sólido que usan los demás
+    campos: es una convención visual muy común para "acá soltás o
+    elegís un archivo", distinta a un campo de texto común.
+  */
+}
+
+/* NUEVO: vista previa de la imagen ya subida */
+#preview-imagen-producto {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  border-radius: var(--radio-borde-chico);
+  border: 2px solid var(--color-mostaza);
+  margin: 10px 0;
+}
+
+.fila-opcion {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid rgba(200, 138, 34, 0.35);
+  border-radius: var(--radio-borde-chico);
+  background-color: rgba(255, 253, 247, 0.72);
+}
+
+.fila-opcion-principal,
+.fila-premio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.fila-opcion .input-nombre-opcion {
+  flex: 2 1 160px;
+}
+
+.fila-opcion .input-archivo-opcion {
+  flex: 1 1 180px;
+}
+
+.fila-opcion .preview-opcion {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+}
+
+.fila-opcion .estado-subida-opcion {
+  flex: 1 1 160px;
+  margin-bottom: 0;
+}
+
+.fila-opcion .input-precio-opcion {
+  flex: 1 1 100px;
+}
+
+.fila-opcion .select-tipo-opcion {
+  flex: 1 1 130px;
+  min-height: var(--alto-tactil);
+  padding: 0 10px;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-blanco);
+  color: var(--color-texto);
+  font: inherit;
+}
+
+.panel-premios-opcion {
+  padding: 10px;
+  border: 1px dashed var(--color-verde-menta-oscuro);
+  border-radius: var(--radio-borde-chico);
+  background-color: rgba(111, 198, 163, 0.08);
+}
+
+.panel-premios-opcion h4 {
+  margin-bottom: 4px;
+  color: var(--color-verde-menta-oscuro);
+  font-size: 0.95rem;
+}
+
+.contenedor-premios-opcion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.fila-premio {
+  padding: 8px;
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-blanco);
+}
+
+.fila-premio .input-nombre-premio {
+  flex: 2 1 190px;
+}
+
+.fila-premio .input-archivo-premio {
+  flex: 1 1 180px;
+}
+
+.fila-premio .input-numero-premio {
+  flex: 1 1 100%;
+}
+
+.fila-trasera-premio {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.boton-secundario,
+.boton-editar-fila,
+.boton-quitar-fila {
+  min-height: var(--alto-tactil);
+  padding: 0 16px;
+  border-radius: var(--radio-borde-chico);
+  font-family: var(--fuente-texto);
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid var(--color-verde-menta-oscuro);
+  background-color: transparent;
+  color: var(--color-verde-menta-oscuro);
+}
+
+.boton-quitar-fila {
+  border-color: var(--color-rojo-cereza);
+  color: var(--color-rojo-cereza);
+}
+
+.boton-editar-fila {
+  border-color: var(--color-mostaza-oscuro);
+  color: var(--color-mostaza-oscuro);
+}
+
+#form-nuevo-producto .boton-comprar {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.tarjeta-producto-admin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--color-mostaza);
+}
+
+
+.resumen-producto-admin {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.miniatura-producto-admin {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  object-fit: cover;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-blanco);
+}
+
+.miniatura-agregar-imagen-admin {
+  width: 72px;
+  min-height: 44px;
+  flex: 0 0 72px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 1px dashed var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  color: var(--color-rojo);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  background-color: rgba(255, 255, 255, 0.55);
+}
+.tarjeta-producto-admin:last-child {
+  border-bottom: none;
+}
+
+/* -----------------------------------------------------------------
+   10) PIE DE PÁGINA (footer)
+   ------------------------------------------------------------------ */
+footer {
+  text-align: center;
+  padding: 16px;
+  color: var(--color-texto-suave);
+  font-size: 0.8rem;
+}
+
+#info-root {
+  max-width: 760px;
+  margin: 18px auto 0;
+  padding: 16px;
+  text-align: left;
+  background-color: var(--color-papel);
+  border: 2px dashed var(--color-verde-menta-oscuro);
+  border-radius: var(--radio-borde-chico);
+  color: var(--color-texto);
+}
+
+#info-root h2 {
+  font-family: var(--fuente-titulos);
+  color: var(--color-rojo-cereza);
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+#info-root p {
+  margin-bottom: 10px;
+}
+
+#info-root ul {
+  padding-left: 20px;
+}
+
+#info-root li {
+  margin-bottom: 8px;
+}
+
+#info-root code {
+  font-family: Consolas, Monaco, monospace;
+  font-size: 0.85em;
+  background-color: var(--color-blanco);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+#info-admin-root {
+  max-width: var(--ancho-contenido);
+  margin: 0 auto 28px;
+  padding: 0 16px;
+  text-align: left;
+  color: var(--color-texto);
+  font-size: 0.86rem;
+}
+
+.panel-notas-root {
+  background-color: var(--color-papel);
+  border: 2px dashed var(--color-verde-menta-oscuro);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-tarjeta);
+  padding: 16px;
+}
+
+.panel-notas-root h2 {
+  font-family: var(--fuente-titulos);
+  color: var(--color-rojo-cereza);
+  font-size: 1.15rem;
+  margin-bottom: 8px;
+}
+
+.panel-notas-root p {
+  margin-bottom: 10px;
+  color: var(--color-texto-suave);
+}
+
+.panel-notas-root ul {
+  padding-left: 20px;
+}
+
+.panel-notas-root li {
+  margin-bottom: 8px;
+}
+
+.panel-notas-root code {
+  font-family: Consolas, Monaco, monospace;
+  font-size: 0.85em;
+  background-color: var(--color-blanco);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+/* -----------------------------------------------------------------
+   11) MEDIA QUERY: pantallas de 700px o más (tablet / notebook)
+   -----------------------------------------------------------------
+   Acá "agrandamos" cosas para aprovechar el espacio extra. Esta
+   regla SOLO se aplica cuando el ancho de la pantalla es 700px o
+   mayor; en celulares (pantallas más angostas) el navegador la
+   ignora por completo y se queda con todo lo de arriba.
+------------------------------------------------------------------ */
+@media (min-width: 700px) {
+  header {
+    display: block;
+  }
+
+  :root {
+    --ancho-contenido: 640px;
+  }
+
+  header h1 {
+    font-size: 2.2rem;
+  }
+
+  header h1 span {
+    display: inline;
+  }
+
+  main h1 {
+    font-size: 1.8rem;
+  }
+
+  main {
+    padding: 40px 24px 60px;
+  }
+
+  #hero {
+    gap: 18px;
+  }
+
+  #btn-dinero-diario {
+    width: auto;
+    align-self: flex-start;
+    padding: 0 32px;
+  }
+
+  .grupo-acciones {
+    flex-direction: row;
+  }
+
+  .grupo-acciones #btn-accion-principal {
+    flex: 1 1 0;
+    width: auto;
+  }
+
+  header #link-mi-coleccion {
+    position: absolute;
+    top: 50%;
+    right: 24px;
+    margin-top: 0;
+    transform: translateY(-50%);
+    font-size: 0.95rem;
+    padding: 8px 18px;
+    /*
+      En pantallas más anchas el header también crece (ver
+      "header h1" arriba), así que le damos un poco más de aire al
+      link para que no se vea perdido en la esquina.
+    */
+  }
+
+  header #link-mi-coleccion:hover {
+    transform: translateY(-50%) scale(1.04);
+  }
+
+  #escena-recompensa img {
+    max-width: 400px;
+  }
+
+  .grilla-productos {
+    grid-template-columns: 1fr 1fr;
+    /* En pantallas de 700px o más, los productos se acomodan de a 2
+       por fila en vez de uno abajo del otro. */
+  }
+
+  .grilla-lugares-compra {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.detalle-coleccionable {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-texto-suave);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+.panel-recarga-root {
+  background-color: var(--color-papel);
+  border: 2px dashed var(--color-verde-menta-oscuro);
+  border-radius: var(--radio-borde-chico);
+  padding: 12px;
+}
+
+.panel-recarga-root label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: var(--color-verde-menta-oscuro);
+}
+
+.fila-recarga-root {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#input-recarga-monedas {
+  flex: 1 1 120px;
+  min-height: var(--alto-tactil);
+  padding: 0 12px;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  font-family: var(--fuente-texto);
+  font-size: 1rem;
+}
+
+#btn-recargar-monedas {
+  min-height: var(--alto-tactil);
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-verde-menta-oscuro);
+  color: var(--color-blanco);
+  font-family: var(--fuente-texto);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#estado-recarga-monedas {
+  margin: 8px 0 0;
+}
+
+.cabecera-perfil {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 18px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid var(--color-mostaza);
+}
+
+.foto-perfil {
+  width: 96px;
+  height: 96px;
+  flex: 0 0 96px;
+  object-fit: cover;
+  border: 4px solid var(--color-mostaza);
+  border-radius: 50%;
+  background-color: var(--color-papel);
+}
+
+.datos-perfil h2,
+.seccion-muro h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  color: var(--color-texto);
+}
+
+.datos-perfil p {
+  margin: 4px 0 10px;
+  color: var(--color-texto-suave);
+}
+
+.link-perfil {
+  color: var(--color-rojo-cereza);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.controles-perfil {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 24px;
+}
+
+.selector-foto {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.controles-perfil .texto-ayuda {
+  width: 100%;
+  margin: 0;
+}
+
+.seccion-muro {
+  margin: 24px 0;
+}
+
+.lista-muro {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  margin: 12px 0 0;
+  list-style: none;
+}
+
+.lista-muro li {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-papel);
+  box-shadow: var(--sombra-tarjeta);
+}
+
+.lista-muro li .boton-articulo-muro {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lista-muro li .boton-articulo-muro:focus-visible {
+  outline: 3px solid var(--color-verde-menta-oscuro);
+  outline-offset: 3px;
+}
+
+.lista-muro li .boton-articulo-muro:hover img {
+  transform: scale(1.03);
+}
+
+.lista-muro li img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  background-color: var(--color-blanco);
+  border-radius: var(--radio-borde-chico);
+  transition: transform 0.16s ease;
+}
+
+.lista-muro li strong {
+  overflow-wrap: anywhere;
+  font-size: 0.88rem;
+}
+
+.lista-muro .muro-vacio {
+  grid-column: 1 / -1;
+  display: block;
+  color: var(--color-texto-suave);
+  text-align: center;
+}
+
+.modal-detalle-articulo {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background-color: rgba(59, 46, 32, 0.72);
+}
+
+.detalle-articulo {
+  width: min(100%, 380px);
+  max-height: 92vh;
+  overflow: auto;
+  padding: 20px;
+  border: 3px solid var(--color-mostaza);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-papel);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.detalle-articulo img {
+  width: min(100%, 280px);
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-blanco);
+}
+
+.detalle-articulo h2 {
+  margin: 10px 0 6px;
+  font-family: var(--fuente-titulos);
+  color: var(--color-rojo-cereza);
+}
+
+.etiqueta-detalle-articulo {
+  display: inline-block;
+  margin: 12px 0 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: var(--color-verde-menta);
+  color: var(--color-texto);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+@media (min-width: 700px) {
+  .lista-muro {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Botón "Ver reverso / Ver frente" de los artículos con imagen trasera */
+.boton-reverso {
+  margin-top: 8px;
+  padding: 6px 14px;
+  border: 2px solid var(--color-mostaza);
+  border-radius: 999px;
+  background-color: var(--color-blanco);
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.boton-reverso:hover,
+.boton-reverso:focus-visible {
+  background-color: var(--color-mostaza);
+}
+
+.detalle-articulo .boton-reverso {
+  display: block;
+  margin: 12px auto 0;
+}
+
+/* Admin: separar y numerar visualmente cada premio */
+.contenedor-premios-opcion {
+  gap: 16px;
+  counter-reset: premio;
+}
+
+.fila-premio {
+  counter-increment: premio;
+  border-left: 4px solid var(--color-mostaza);
+  box-shadow: 0 1px 4px rgba(59, 46, 32, 0.18);
+}
+
+.fila-premio::before {
+  content: "Premio " counter(premio);
+  flex: 1 1 100%;
+  color: var(--color-mostaza-oscuro);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Admin: fondo alternado naranja / amarillo suave por premio */
+.contenedor-premios-opcion .fila-premio:nth-of-type(odd) {
+  background-color: #FFE6C7;
+}
+
+.contenedor-premios-opcion .fila-premio:nth-of-type(even) {
+  background-color: #FFF6C2;
+}
+
+/* Admin: botón "Ajustar" y editor de imagen (giro preciso) */
+.boton-editar-imagen {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-blanco);
+  color: var(--color-texto);
+  font-family: var(--fuente-texto);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.preview-opcion.oculto + .boton-editar-imagen {
+  display: none;
+}
+
+.boton-editar-imagen:hover,
+.boton-editar-imagen:focus-visible,
+.boton-rotar:hover,
+.boton-rotar:focus-visible {
+  background-color: var(--color-mostaza);
+}
+
+.boton-rotar {
+  min-width: 52px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-blanco);
+  color: var(--color-texto);
+  font-family: var(--fuente-texto);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modal-editor-imagen {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  background-color: rgba(59, 46, 32, 0.72);
+}
+
+.editor-imagen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(100%, 440px);
+  max-height: 94vh;
+  overflow: auto;
+  padding: 16px;
+  border: 3px solid var(--color-mostaza);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-papel);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.3);
+}
+
+.editor-imagen h3 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  color: var(--color-rojo-cereza);
+}
+
+.editor-imagen-zona {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.editor-imagen-escenario,
+.editor-imagen-marco-referencia {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-blanco);
+  background-image: conic-gradient(#EDE5D2 25%, transparent 0 50%, #EDE5D2 0 75%, transparent 0);
+  background-size: 16px 16px;
+}
+
+.editor-imagen-escenario {
+  flex: 1 1 auto;
+}
+
+.editor-imagen-escenario canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.editor-imagen-referencia {
+  flex: 0 0 88px;
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.editor-imagen-marco-referencia {
+  width: 88px;
+  margin-bottom: 4px;
+}
+
+.editor-imagen-marco-referencia img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Guías: cruz al centro y círculo punteado, para alinear a ojo */
+.editor-imagen-guias {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to right, transparent calc(50% - 0.5px), rgba(198, 64, 46, 0.8) calc(50% - 0.5px), rgba(198, 64, 46, 0.8) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(50% - 0.5px), rgba(198, 64, 46, 0.8) calc(50% - 0.5px), rgba(198, 64, 46, 0.8) calc(50% + 0.5px), transparent calc(50% + 0.5px));
+}
+
+.editor-imagen-guias::after {
+  content: "";
+  position: absolute;
+  inset: 4%;
+  border: 1px dashed rgba(198, 64, 46, 0.55);
+  border-radius: 50%;
+}
+
+.editor-imagen-fila-angulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.editor-imagen-fila-angulo input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  accent-color: var(--color-rojo-cereza);
+}
+
+.editor-imagen-fila-angulo input[type="number"] {
+  flex: 0 0 76px;
+  width: 76px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-blanco);
+  font: inherit;
+}
+
+.editor-imagen-pasos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.editor-imagen-estado {
+  margin: 0;
+}
+
+.editor-imagen-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Imagen que se puede voltear al tocarla */
+.imagen-girable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+
+/* =================================================================
+   12) TOQUE AÑOS 2000 (Web 2.0 / Y2K)
+   -----------------------------------------------------------------
+   Esta sección va AL FINAL a propósito: pisa lo de arriba sin
+   borrarlo. Si algún día querés volver al look anterior, basta con
+   borrar todo desde este comentario hacia abajo.
+
+   Ingredientes de la época:
+   - Botones "gel" brillantes (degradé con corte duro al medio)
+   - Tarjeta de saldo como ventana de computador ("Mi monedero.exe")
+   - Fondo de puntitos, bordes biselados y sombras "3D" duras
+   - Tipografía Verdana/Trebuchet en el texto
+   - Contador de monedas con pantalla LCD verde
+   ================================================================= */
+
+:root {
+  --fuente-texto: Verdana, Tahoma, "Trebuchet MS", sans-serif;
+  --radio-borde: 12px;
+  --radio-borde-chico: 8px;
+  --sombra-tarjeta: inset 0 1px 0 #fff, 0 3px 0 var(--color-mostaza-oscuro), 0 8px 12px rgba(59, 46, 32, 0.22);
+  --brillo-superior: inset 0 1px 0 rgba(255, 255, 255, 0.65), inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+}
+
+::selection {
+  background: var(--color-rojo-cereza);
+  color: var(--color-blanco);
+}
+
+:focus-visible {
+  outline: 3px dotted var(--color-verde-menta-oscuro);
+  outline-offset: 3px;
+}
+
+/* ---- Fondo: papel con puntitos ---- */
+body {
+  background-color: var(--color-crema);
+  background-image:
+    radial-gradient(circle, rgba(230, 169, 59, 0.38) 1.6px, transparent 2px),
+    radial-gradient(circle, rgba(111, 198, 163, 0.28) 1.6px, transparent 2px);
+  background-size: 22px 22px, 22px 22px;
+  background-position: 0 0, 11px 11px;
+  font-size: 0.94rem;
+}
+
+/* ---- Encabezado: barra brillante con título "WordArt" ---- */
+header {
+  background-color: var(--color-mostaza);
+  background-image: linear-gradient(
+    to bottom,
+    #FFE08F 0%,
+    #F6C255 47%,
+    #E6A93B 50%,
+    #D58D1C 100%
+  );
+  border-bottom: 5px solid var(--color-rojo-cereza);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.7), 0 4px 0 #A2321F, 0 8px 14px rgba(59, 46, 32, 0.3);
+  margin-bottom: 6px;
+}
+
+header h1 {
+  color: #FFFFFF;
+  letter-spacing: 1px;
+  /* Contorno marrón con sombras múltiples (efecto WordArt) */
+  text-shadow:
+    -2px -2px 0 #3B2E20, 2px -2px 0 #3B2E20,
+    -2px 2px 0 #3B2E20, 2px 2px 0 #3B2E20,
+    0 -2px 0 #3B2E20, 0 2px 0 #3B2E20,
+    -2px 0 0 #3B2E20, 2px 0 0 #3B2E20,
+    0 5px 0 #A2321F, 0 7px 6px rgba(0, 0, 0, 0.35);
+}
+
+header h1::before,
+header h1::after {
+  content: "\2605"; /* ★ */
+  display: none; /* en celular el título va en 2 líneas: sin estrellas */
+  margin: 0 8px;
+  color: #FFF3B0;
+  font-size: 0.7em;
+  vertical-align: 0.12em;
+  text-shadow: 0 0 6px #FFFFFF, 0 2px 0 #A2321F;
+}
+
+/* ---- Botones "gel" ---- */
+#btn-accion-principal,
+#btn-dinero-diario,
+header #link-mi-coleccion,
+.boton-comprar,
+#btn-recargar-monedas {
+  border-radius: 999px;
+  border: 1px solid rgba(59, 46, 32, 0.55);
+  box-shadow: var(--brillo-superior), 0 3px 0 rgba(59, 46, 32, 0.35), 0 5px 8px rgba(59, 46, 32, 0.25);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.2px;
+}
+
+#btn-accion-principal,
+.boton-comprar {
+  background-image: linear-gradient(to bottom, #F58A74 0%, #DC4A33 48%, #B8301D 52%, #CF4630 100%);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.45);
+  border-color: #7E2013;
+}
+
+#btn-dinero-diario {
+  background-image: linear-gradient(to bottom, #FFE9A6 0%, #F3C355 48%, #DD9C22 52%, #EDB43F 100%);
+  border-color: #8A5E10;
+}
+
+header #link-mi-coleccion,
+#btn-recargar-monedas {
+  background-image: linear-gradient(to bottom, #C7F5E2 0%, #7ED3AE 48%, #4FA382 52%, #6BBF9C 100%);
+  border-color: #2F6E55;
+  color: var(--color-texto);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+#btn-recargar-monedas {
+  color: #FFFFFF;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.4);
+}
+
+#btn-accion-principal:active,
+#btn-dinero-diario:not(:disabled):active,
+.boton-comprar:active,
+#btn-recargar-monedas:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.35), 0 0 0 rgba(0, 0, 0, 0);
+}
+
+/* Botones chicos tipo "píldora" (reverso, ajustar, etc.) */
+.boton-reverso,
+.boton-editar-imagen,
+.boton-rotar {
+  background-image: linear-gradient(to bottom, #FFFFFF 0%, #F3E9CF 50%, #E8D9B3 52%, #F5EBD0 100%);
+  box-shadow: var(--brillo-superior), 0 2px 0 rgba(59, 46, 32, 0.3);
+}
+
+.boton-reverso:hover,
+.boton-reverso:focus-visible {
+  background-image: linear-gradient(to bottom, #FFE9A6 0%, #F3C355 50%, #DD9C22 52%, #EDB43F 100%);
+}
+
+/* ---- Tarjeta de saldo = ventana de computador ---- */
+.tarjeta-saldo {
+  position: relative;
+  padding-top: 0;
+  border: 2px solid #8A5E10;
+  border-radius: 10px 10px 8px 8px;
+  background-image: linear-gradient(to bottom, #FFFFFF 0%, var(--color-papel) 60%);
+  box-shadow: var(--sombra-tarjeta);
+  overflow: hidden;
+}
+
+.tarjeta-saldo::before {
+  content: "\1F4B0  Mi monedero.exe";
+  align-self: stretch;
+  margin: 0 -16px 6px;
+  padding: 7px 96px 7px 12px;
+  color: #FFFFFF;
+  font-family: var(--fuente-texto);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+  background-image: linear-gradient(to bottom, #8FD9BB 0%, #4FA382 48%, #3A8A6B 52%, #4FA382 100%);
+  border-bottom: 2px solid #2F6E55;
+}
+
+/* Botoncitos de la ventana: minimizar, maximizar, cerrar (decorativos) */
+.tarjeta-saldo::after {
+  content: "\2013\00a0\00a0\25A1\00a0\00a0\2715";
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  padding: 0 8px;
+  color: var(--color-texto);
+  font-family: var(--fuente-texto);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 2px;
+  white-space: pre;
+  background-image: linear-gradient(to bottom, #FFFFFF, #E5E5E5);
+  border: 1px solid #2F6E55;
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.tarjeta-saldo > * {
+  margin-left: 0;
+}
+
+/* ---- Contador de monedas: pantalla LCD ---- */
+#monedas-usuario,
+#monedas-disponibles {
+  background-color: #1B2A1D;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%);
+  border: 3px solid #5A4A38;
+  border-radius: 6px;
+  color: #A6FF8A;
+  font-family: "Courier New", Courier, monospace;
+  font-weight: 700;
+  text-shadow: 0 0 6px rgba(166, 255, 138, 0.7);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.7), 0 1px 0 #FFFFFF;
+}
+
+/* ---- Tarjetas y listas: biselado + sombra dura ---- */
+.tarjeta-producto,
+.tarjeta-lugar-compra,
+.lista-muro li,
+#lista-coleccionables li,
+#lista-inventario li,
+#escena-recompensa,
+.bloque-admin,
+.panel-notas-root {
+  background-image: linear-gradient(to bottom, #FFFFFF 0%, var(--color-papel) 70%);
+  box-shadow: var(--sombra-tarjeta);
+}
+
+.tarjeta-producto,
+.tarjeta-lugar-compra {
+  border-radius: 14px;
+}
+
+.tarjeta-producto:hover,
+.tarjeta-lugar-compra:hover {
+  transform: translateY(-3px);
+  box-shadow: inset 0 1px 0 #fff, 0 6px 0 var(--color-mostaza-oscuro), 0 12px 16px rgba(59, 46, 32, 0.25);
+}
+
+.nombre-producto,
+.tarjeta-lugar-compra span {
+  text-shadow: 1px 1px 0 #FFFFFF;
+}
+
+.imagen-coleccionable,
+.foto-perfil {
+  box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px var(--color-mostaza), 0 4px 8px rgba(59, 46, 32, 0.3);
+}
+
+.etiqueta-detalle-articulo {
+  background-image: linear-gradient(to bottom, #C7F5E2 0%, #7ED3AE 48%, #4FA382 52%, #6BBF9C 100%);
+  border: 1px solid #2F6E55;
+  box-shadow: var(--brillo-superior);
+}
+
+/* ---- Títulos en relieve ---- */
+main h1,
+.modal-premio-contenido h2,
+.modal-lugares-contenido h2,
+.detalle-articulo h2 {
+  text-shadow: 1px 1px 0 #FFFFFF, 2px 2px 0 rgba(198, 64, 46, 0.25);
+}
+
+/* ---- Campos de texto "hundidos" ---- */
+#input-recarga-monedas,
+#form-nuevo-producto input[type="text"],
+#form-nuevo-producto input[type="number"] {
+  border-radius: 6px;
+  box-shadow: inset 2px 2px 4px rgba(59, 46, 32, 0.25), 0 1px 0 #FFFFFF;
+}
+
+.panel-recarga-root {
+  background-image: linear-gradient(to bottom, #FFFFFF 0%, var(--color-papel) 80%);
+  border-radius: 10px;
+}
+
+/* ---- Ventanas emergentes (modales) ---- */
+.modal-premio-contenido,
+.modal-lugares-contenido,
+.detalle-articulo,
+.editor-imagen {
+  background-image: linear-gradient(to bottom, #FFFFFF 0%, var(--color-papel) 40%);
+  border: 3px solid #8A5E10;
+  box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 6px var(--color-mostaza), 0 16px 30px rgba(59, 46, 32, 0.45);
+}
+
+.modal-premio,
+.modal-lugares,
+.modal-detalle-articulo,
+.modal-editor-imagen {
+  /* velo con trama fina, como los fondos de diálogo de la época */
+  background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.12) 0 2px, transparent 2px 6px);
+}
+
+.btn-cerrar-modal {
+  background-image: linear-gradient(to bottom, #F58A74 0%, #DC4A33 48%, #B8301D 52%, #CF4630 100%);
+  border: 1px solid #7E2013;
+  border-radius: 6px;
+  color: #FFFFFF;
+  box-shadow: var(--brillo-superior);
+}
+
+/* ---- Pie de página ---- */
+footer {
+  font-family: var(--fuente-texto);
+}
+
+/* Respeta a quienes pidieron menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+@media (min-width: 700px) {
+  header h1::before,
+  header h1::after {
+    display: inline-block;
+  }
+}
+
+
+/* ---- Perfil: botón de engranaje y panel "Mi cuenta" ---- */
+.cabecera-perfil {
+  position: relative;
+}
+
+.cabecera-perfil .datos-perfil {
+  padding-right: 54px;
+}
+
+.boton-ajustes {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid #8A5E10;
+  border-radius: 50%;
+  background-image: linear-gradient(to bottom, #FFFFFF 0%, var(--color-papel) 45%, #F3D9A0 100%);
+  color: var(--color-texto);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--brillo-superior), 0 2px 5px rgba(59, 46, 32, 0.3);
+  transition: transform 0.4s ease;
+}
+
+.boton-ajustes:hover,
+.boton-ajustes:focus-visible {
+  transform: rotate(60deg);
+  outline: 3px solid var(--color-verde-menta);
+  outline-offset: 2px;
+}
+
+.boton-ajustes.oculto {
+  display: none;
+}
+
+.detalle-ajustes {
+  text-align: left;
+}
+
+/* Computador: el modal "Mi cuenta" es más ancho para que quepan dos botones lado a lado. */
+@media (min-width: 700px) {
+  .detalle-ajustes {
+    width: min(100%, 540px);
+  }
+}
+
+.detalle-ajustes h2 {
+  margin-top: 8px;
+}
+
+.lista-ajustes {
+  margin: 12px 0;
+}
+
+.fila-ajuste {
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--color-mostaza);
+}
+
+.fila-ajuste dt {
+  color: var(--color-texto-suave);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.fila-ajuste dd {
+  margin: 2px 0 0;
+  color: var(--color-texto);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.fila-nombre-usuario dd { display: flex; align-items: center; gap: 8px; }
+.boton-editar-nombre, .boton-mini-nombre { border: 0; padding: 2px 6px; border-radius: 6px; background: transparent; color: var(--color-verde, #3BA982); font: inherit; font-size: 1.05rem; font-weight: 800; cursor: pointer; }
+.boton-editar-nombre:hover, .boton-editar-nombre:focus-visible, .boton-mini-nombre:hover, .boton-mini-nombre:focus-visible { background: #E8F7EF; }
+.editor-nombre-usuario { display: flex; align-items: center; gap: 4px; width: 100%; }
+.editor-nombre-usuario input { min-width: 0; flex: 1; padding: 5px 7px; border: 1px solid var(--color-verde, #3BA982); border-radius: 6px; font: inherit; color: var(--color-texto); }
+.boton-mini-cancelar { color: var(--color-rojo, #C6402E); }
+
+@media (prefers-reduced-motion: reduce) {
+  .boton-ajustes:hover,
+  .boton-ajustes:focus-visible {
+    transform: none;
+  }
+}
+
+
+/* ---- Dinero del usuario dentro del encabezado ----
+   Entre el título y el botón "Mi perfil".
+   - Celular y pantallas medianas: debajo del título, centrado.
+   - Pantallas anchas (1000px o más): en la misma fila, entre el
+     título y "Mi perfil". */
+header #monedas-usuario {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-self: center;
+  align-self: center;
+  margin: 0;
+  padding: 4px 12px;
+  border-width: 2px;
+  font-size: 0.85rem;
+}
+
+header #monedas-usuario:not(:empty) {
+  display: inline-block;
+  margin: 12px 0 0;
+}
+
+@media (min-width: 1000px) {
+  header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    column-gap: 0;
+    padding: 20px 24px;
+  }
+
+  header h1 {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  header #monedas-usuario {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  header #monedas-usuario:not(:empty) {
+    margin: 0 18px 0 0;
+  }
+
+  header #link-mi-coleccion {
+    position: static;
+    grid-column: 3;
+    grid-row: 1;
+    top: auto;
+    right: auto;
+    transform: none;
+  }
+
+  header #link-mi-coleccion:hover {
+    transform: scale(1.04);
+  }
+}
+
+
+/* ---- Botón de regalo diario: 3 monedas de 100 pesos ---- */
+.btn-regalo-diario {
+  position: relative;
+  width: 176px;
+  height: 142px;
+  padding: 0;
+}
+
+.moneda-regalo {
+  position: absolute;
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 3px 2px rgba(59, 46, 32, 0.4));
+  transition: transform 0.2s ease;
+}
+
+.moneda-regalo-izq {
+  left: 10px;
+  bottom: 6px;
+  transform: rotate(-12deg);
+}
+
+.moneda-regalo-der {
+  right: 10px;
+  bottom: 10px;
+  transform: rotate(9deg);
+}
+
+.moneda-regalo-arriba {
+  left: 50%;
+  top: 4px;
+  margin-left: -42px;
+  transform: rotate(-4deg);
+  z-index: 1;
+}
+
+.btn-regalo-diario:not(:disabled):hover .moneda-regalo-izq {
+  transform: rotate(-16deg) translateY(-3px);
+}
+
+.btn-regalo-diario:not(:disabled):hover .moneda-regalo-der {
+  transform: rotate(13deg) translateY(-3px);
+}
+
+.btn-regalo-diario:not(:disabled):hover .moneda-regalo-arriba {
+  transform: rotate(2deg) translateY(-6px);
+}
+
+.btn-regalo-diario:focus-visible {
+  outline: 3px solid var(--color-verde-menta);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moneda-regalo {
+    transition: none;
+  }
+}
+
+
+/* ---- Botón "Intercambios" en el encabezado ---- */
+header #link-intercambios {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  min-height: 0;
+  margin: 12px 8px 0 0;
+  padding: 6px 16px;
+  border: 1px solid #7E2013;
+  border-radius: 999px;
+  background-image: linear-gradient(to bottom, #F58A74 0%, #DC4A33 48%, #B8301D 52%, #CF4630 100%);
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: var(--brillo-superior), 0 3px 0 rgba(59, 46, 32, 0.35), 0 5px 8px rgba(59, 46, 32, 0.25);
+}
+
+header #link-intercambios.oculto { display: none; }
+header #link-intercambios:hover { filter: brightness(1.08); }
+header #link-intercambios:not(.oculto) ~ #monedas-usuario { grid-row: 3; }
+
+@media (min-width: 1000px) {
+  header { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+  header #link-intercambios { grid-column: 2; grid-row: 1; justify-self: end; margin: 0 14px 0 0; }
+  header #monedas-usuario,
+  header #link-intercambios:not(.oculto) ~ #monedas-usuario { grid-column: 3; grid-row: 1; }
+  header #link-mi-coleccion { grid-column: 4; }
+}
+
+/* ---- Página de intercambios ---- */
+.bloque-intercambio { margin: 22px 0; }
+.bloque-intercambio h2 { margin: 0 0 8px; font-family: var(--fuente-titulos); }
+.fila-publicar { display: grid; gap: 10px; }
+.fila-publicar select, .fila-publicar input, .acciones-intercambio select {
+  min-height: 44px; padding: 0 10px; border: 2px solid var(--color-mostaza-oscuro);
+  border-radius: var(--radio-borde-chico); background: var(--color-blanco);
+  font-family: var(--fuente-texto); color: var(--color-texto);
+}
+.lista-intercambios { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.tarjeta-intercambio {
+  display: grid; grid-template-columns: 72px 1fr; gap: 12px; padding: 12px;
+  background: var(--color-papel); border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde); box-shadow: var(--sombra-tarjeta);
+}
+.tarjeta-intercambio img { width: 72px; height: 72px; object-fit: contain; border-radius: 50%; background: var(--color-blanco); }
+.tarjeta-intercambio strong { display: block; }
+.tarjeta-intercambio .detalle { display: block; color: var(--color-texto-suave); font-size: 0.9rem; }
+.tarjeta-intercambio .detalle.ofrecido-por { display: flex; align-items: center; gap: 5px; }
+.tarjeta-intercambio img.mini-avatar-propietario {
+  width: 28px; height: 28px; flex: 0 0 28px; object-fit: cover; border-radius: 50%;
+  background: var(--color-blanco); box-shadow: 0 2px 5px rgba(59, 46, 32, 0.28);
+}
+.acciones-intercambio { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.propuesta-recibida { padding: 8px 0; border-top: 1px dashed var(--color-mostaza); }
+.etiqueta-estado { font-weight: 700; color: var(--color-verde-menta-oscuro); }
+
+
+/* ---- Selector de objetos con imágenes (¿Qué buscas?) ---- */
+.campo-busco { position: relative; display: grid; gap: 8px; }
+.panel-catalogo {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px;
+  grid-auto-rows: max-content; align-content: start;
+  max-height: 280px; overflow-y: auto; padding: 10px;
+  background: var(--color-papel); border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde); box-shadow: var(--sombra-tarjeta);
+}
+.panel-catalogo.oculto, .busco-elegido.oculto { display: none; }
+.panel-catalogo .texto-ayuda { grid-column: 1 / -1; margin: 0; }
+.opcion-catalogo {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 0; padding: 6px;
+  border: 2px solid transparent; border-radius: var(--radio-borde-chico);
+  background: var(--color-blanco); color: var(--color-texto); font-size: 0.78rem; font-weight: 600;
+  line-height: 1.15; cursor: pointer;
+}
+.opcion-catalogo:hover, .opcion-catalogo:focus-visible { border-color: var(--color-verde-menta-oscuro); }
+.opcion-catalogo img {
+  width: 64px; height: 64px; flex-shrink: 0; object-fit: contain; border-radius: 50%;
+  box-shadow: 0 5px 12px rgba(59, 46, 32, 0.48), 0 1px 3px rgba(59, 46, 32, 0.34);
+  filter: drop-shadow(0 2px 2px rgba(59, 46, 32, 0.3));
+}
+.opcion-catalogo-faltante img {
+  /* Solo se oscurecen los objetos que aún no están en la colección. */
+  filter: brightness(0.5) contrast(1.18) drop-shadow(0 4px 4px rgba(35, 25, 18, 0.58));
+}
+.opcion-catalogo span { display: block; max-width: 100%; overflow-wrap: anywhere; text-align: center; }
+
+/* Las imágenes de los objetos que ofrece el usuario deben verse normales. */
+#panel-ofrezco .opcion-catalogo img {
+  box-shadow: none;
+  filter: none;
+}
+.busco-elegido { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.busco-elegido img {
+  width: 44px; height: 44px; object-fit: contain; border-radius: 50%; background: var(--color-blanco);
+  box-shadow: 0 4px 10px rgba(59, 46, 32, 0.42), 0 1px 3px rgba(59, 46, 32, 0.3);
+  filter: drop-shadow(0 2px 2px rgba(59, 46, 32, 0.24));
+}
+.tarjeta-intercambio .linea-busca { display: flex; align-items: center; gap: 6px; }
+.tarjeta-intercambio img.mini-busca { width: 28px; height: 28px; }
+.tarjeta-intercambio-accionable { cursor: pointer; }
+.tarjeta-intercambio-accionable:hover { border-color: var(--color-rojo); }
+
+/* =================================================================
+   13) EFECTO 3D EN EL DETALLE DE COLECCIONABLES (perfil)
+   Para quitarlo, basta con borrar desde este comentario hacia abajo.
+   ================================================================= */
+.escena-3d {
+  width: min(100%, 300px);
+  margin: 0 auto;
+  padding: 10px;
+  perspective: 900px;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tarjeta-3d {
+  position: relative;
+  will-change: transform;
+  /* La sombra sigue la silueta de la imagen (si es redonda, la sombra es redonda) */
+  filter: drop-shadow(var(--sombra-x, 0px) var(--sombra-y, 10px) 12px rgba(59, 46, 32, 0.4));
+}
+
+.detalle-articulo .tarjeta-3d img {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border-radius: 0;
+}
+
+/* Cuando nadie la toca, se mece suavemente para invitar a probarla */
+.tarjeta-3d-reposo {
+  animation: tarjeta-3d-mecer 5s ease-in-out infinite;
+}
+
+@keyframes tarjeta-3d-mecer {
+  0%, 100% { transform: rotateX(3deg) rotateY(-7deg); }
+  50% { transform: rotateX(-3deg) rotateY(7deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tarjeta-3d-reposo { animation: none; }
+}
+
+/* Botón circular "Intercambio" que muestra/oculta el formulario de publicar */
+.boton-circular {
+  display: block; width: 120px; height: 120px; min-height: 0; padding: 0;
+  margin: 4px 0 14px; border-radius: 50%; font-size: 1rem; line-height: 1.1;
+}
+#form-intercambio, #panel-mercado { display: grid; gap: 10px; }
+#form-intercambio.oculto, #panel-mercado.oculto { display: none !important; }
+
+/* Modal para aceptar una oferta pública de intercambio. */
+.modal-intercambio {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+  padding: 18px; background: rgba(33, 27, 22, 0.68);
+}
+.modal-intercambio.oculto { display: none !important; }
+.tarjeta-usuario-root {
+  display: grid; gap: 10px; margin: 10px 0; padding: 12px;
+  background: var(--color-papel); border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico); box-shadow: var(--sombra-tarjeta);
+}
+.tarjeta-usuario-root .detalle { display: block; color: var(--color-texto-suave); font-size: .82rem; overflow-wrap: anywhere; }
+.tarjeta-usuario-root .acciones-intercambio { margin-top: 0; }
+.modal-intercambio-contenido {
+  position: relative; width: min(100%, 560px); padding: 26px 22px 22px;
+  background: var(--color-papel); border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde); box-shadow: 0 12px 36px rgba(0,0,0,.3);
+}
+.modal-intercambio-contenido h2 { margin: 0 34px 12px 0; font-family: var(--fuente-titulos); }
+.detalle-intercambio-modal { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; }
+.detalle-intercambio-columna { display: grid; justify-items: center; gap: 5px; padding: 10px; text-align: center; background: var(--color-blanco); border-radius: var(--radio-borde-chico); }
+.detalle-intercambio-columna img { width: 82px; height: 82px; object-fit: contain; border-radius: 50%; }
+.detalle-intercambio-columna .detalle { font-size: .88rem; }
+.flecha-intercambio { font-size: 1.5rem; color: var(--color-rojo); }
+.acciones-modal-intercambio { justify-content: flex-end; }
+@media (max-width: 480px) {
+  .detalle-intercambio-modal { grid-template-columns: 1fr; }
+  .flecha-intercambio { transform: rotate(90deg); }
+  .acciones-modal-intercambio { justify-content: stretch; }
+  .acciones-modal-intercambio button { flex: 1; }
+}
+.fila-botones-circulares { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+#panel-mercado h3 { margin-top: 8px; }
+
+/* =================================================================
+   ADMINISTRADOR DE ASSETS (index.html, solo admin)
+   ================================================================= */
+#info-assets {
+  max-width: 760px; margin: 18px auto 0; padding: 16px; text-align: left;
+  background-color: var(--color-papel); border: 2px dashed var(--color-verde-menta-oscuro);
+  border-radius: var(--radio-borde-chico); color: var(--color-texto);
+}
+#info-assets h2 { font-family: var(--fuente-titulos); color: var(--color-rojo-cereza); font-size: 1.1rem; margin-bottom: 8px; }
+#info-assets h3 { font-family: var(--fuente-titulos); font-size: 1rem; margin: 16px 0 8px; }
+#info-assets > p { margin-bottom: 10px; }
+.assets-form { display: grid; gap: 6px; }
+.assets-form label { font-weight: 600; font-size: 0.9rem; }
+#info-assets input[type="text"], #info-assets input[type="search"], #info-assets select {
+  min-height: 44px; padding: 0 10px; width: 100%;
+  border: 2px solid var(--color-mostaza-oscuro); border-radius: var(--radio-borde-chico);
+  background: var(--color-blanco); font-family: var(--fuente-texto); color: var(--color-texto);
+}
+.assets-filtros { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.assets-grupo { margin-bottom: 14px; }
+.assets-grupo h4 { margin: 0 0 8px; font-size: 0.95rem; color: var(--color-texto-suave); }
+.assets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.asset-card {
+  display: grid; gap: 6px; align-content: start; padding: 8px;
+  background: var(--color-blanco); border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+}
+.asset-card img {
+  width: 100%; height: 110px; object-fit: contain; border-radius: 6px;
+  background: repeating-conic-gradient(#eee6d2 0% 25%, #fff8e7 0% 50%) 50% / 16px 16px;
+}
+.asset-card strong { font-size: 0.85rem; line-height: 1.2; overflow-wrap: anywhere; }
+.asset-acciones { display: flex; flex-wrap: wrap; gap: 6px; }
+.asset-acciones button, .asset-card .boton-secundario, .asset-card .boton-comprar { min-height: 34px; padding: 0 10px; font-size: 0.78rem; }
+
+/* ---- Botón "Usuario root" (esquina izquierda del encabezado, solo admin) ---- */
+header #link-root {
+  position: absolute; top: 8px; left: 12px; z-index: 2;
+  display: inline-flex; align-items: center; min-height: 0;
+  padding: 4px 12px;
+  border: 1px solid #2A1F14; border-radius: 999px;
+  background-image: linear-gradient(to bottom, #8A6B47 0%, #5C4529 48%, #3B2E20 52%, #4E3B24 100%);
+  color: #FFFFFF; font-size: 0.75rem; font-weight: 700; text-decoration: none;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: var(--brillo-superior), 0 3px 0 rgba(59, 46, 32, 0.35), 0 5px 8px rgba(59, 46, 32, 0.25);
+}
+header #link-root.oculto { display: none; }
+header #link-root:hover { filter: brightness(1.12); }
+header:has(#link-root:not(.oculto)) { padding-top: 42px; }
+
+@media (min-width: 1000px) {
+  header #link-root { top: 50%; left: 24px; transform: translateY(-50%); font-size: 0.9rem; padding: 8px 18px; }
+  header #link-root:hover { transform: translateY(-50%) scale(1.04); }
+  header:has(#link-root:not(.oculto)) { padding-top: 20px; padding-left: 190px; }
+}
+
+/* ---- Página "Usuario root" ---- */
+.herramientas-root { display: grid; gap: 10px; margin: 14px 0; }
+.herramientas-root a {
+  display: block; padding: 12px 14px; text-decoration: none; font-weight: 700;
+  color: var(--color-texto); background: var(--color-papel);
+  border: 2px solid var(--color-mostaza); border-radius: var(--radio-borde-chico);
+}
+.herramientas-root a span { display: block; font-weight: 400; font-size: 0.85rem; color: var(--color-texto-suave); }
+.herramientas-root a:hover { border-color: var(--color-rojo-cereza); }
+
+.assets-detalles { margin-bottom: 10px; }
+.assets-detalles > summary { cursor: pointer; font-weight: 700; padding: 8px 0; }
+.assets-detalles > .assets-grid { margin-top: 6px; }
+
+
+/* -----------------------------------------------------------------
+   14) ENCABEZADO EN CELULAR: TÍTULO ARRIBA Y BOTONES AFUERA, ABAJO
+   -----------------------------------------------------------------
+   Objetivo: en celular, el fondo naranjo (dorado) es SOLO del título.
+   Los botones "Intercambios" y "Mi perfil" y el dinero quedan debajo,
+   fuera del naranjo, sobre el fondo crema de la página.
+
+   Cómo se logra sin mover el HTML (así el diseño de escritorio no
+   cambia): el header deja de pintar su propio fondo y ese fondo
+   dorado se dibuja con un pseudo-elemento (header::before) que ocupa
+   SOLO la fila del título. La fila de abajo (los botones) queda sin
+   fondo.
+------------------------------------------------------------------ */
+
+/* Por defecto (pantallas de 700px o más) el envoltorio no existe
+   visualmente: sus hijos se comportan como si fueran hijos directos
+   del header. */
+.barra-header {
+  display: contents;
+}
+
+@media (max-width: 699px) {
+
+  /* El header pasa a ser una grilla de 1 columna y 2 filas:
+     fila 1 = título (con fondo dorado), fila 2 = botones y dinero. */
+  header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    padding: 0;                /* sin relleno: lo da cada fila por separado */
+    background: none;          /* el header ya NO pinta el fondo naranjo */
+    border-bottom: 0;          /* ni la línea roja de abajo */
+    box-shadow: none;          /* ni su sombra */
+    margin-bottom: 0;
+  }
+
+  /* El fondo naranjo ahora lo dibuja este pseudo-elemento, que ocupa
+     únicamente la fila 1 (la del título). */
+  header::before {
+    content: "";
+    grid-column: 1;
+    grid-row: 1;
+    background-color: var(--color-mostaza);
+    background-image: linear-gradient(to bottom, #FFE08F 0%, #F6C255 47%, #E6A93B 50%, #D58D1C 100%);
+    border-bottom: 5px solid var(--color-rojo-cereza);   /* la línea roja, ahora bajo el título */
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.7), 0 4px 0 #A2321F, 0 8px 14px rgba(59, 46, 32, 0.3);
+  }
+
+  /* El título va en la fila 1, encima del fondo dorado, con su
+     propio relleno (el que antes tenía el header). */
+  header h1 {
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;        /* para que quede por encima del fondo */
+    z-index: 1;
+    padding: 20px 16px 24px;
+  }
+
+  /* Cuando aparece el botón "Usuario root" arriba del título, se
+     necesita más espacio arriba: se lo damos al título. */
+  header:has(#link-root:not(.oculto)) {
+    padding-top: 0;
+  }
+  header:has(#link-root:not(.oculto)) h1 {
+    padding-top: 42px;
+  }
+
+  /* Zona de botones: fila 2, SIN fondo (se ve el crema de la página).
+     Grilla de 2 columnas para poner los dos botones lado a lado. */
+  header .barra-header {
+    grid-column: 1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    row-gap: 14px;                    /* espacio entre los botones y el dinero */
+    padding: 26px 16px 4px;           /* aire arriba (separa del naranjo) y a los lados */
+    background: none;
+    border: 0;
+    box-shadow: none;
+  }
+
+  /* Si no hay nada visible (nadie logeado), se oculta la zona entera
+     para que no quede un espacio vacío. */
+  header .barra-header:not(:has(> a:not(.oculto), > p:not(:empty))) {
+    display: none;
+  }
+
+  /* "Intercambios": columna izquierda, pegado al centro. */
+  header .barra-header #link-intercambios {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+    margin: 0 6px 0 0;
+  }
+
+  /* "Mi perfil": columna derecha, pegado al centro. */
+  header .barra-header #link-mi-coleccion {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: start;
+    margin: 0 0 0 6px;
+  }
+
+  /* Si "Intercambios" está oculto, "Mi perfil" se centra solo. */
+  header .barra-header:has(#link-intercambios.oculto) #link-mi-coleccion {
+    grid-column: 1 / -1;
+    justify-self: center;
+    margin: 0;
+  }
+
+  /* El dinero: fila 2, centrado, en una sola línea. */
+  header .barra-header #monedas-usuario,
+  header .barra-header #monedas-usuario:not(:empty),
+  header .barra-header #link-intercambios:not(.oculto) ~ #monedas-usuario {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+    margin: 0;
+    white-space: nowrap;
+  }
+}
+
+
+/* -----------------------------------------------------------------
+   15) MODAL "MI CUENTA": acciones y botón "Más información"
+   -----------------------------------------------------------------
+   "Cambiar foto" y "Copiar enlace" ahora están dentro del modal del
+   engranaje, y los datos privados se muestran solo al tocar el botón
+   "Más información de mi cuenta".
+------------------------------------------------------------------ */
+
+/* Celular: todos los botones apilados, uno bajo otro, a ancho completo. */
+.acciones-ajustes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  align-items: stretch;
+  margin: 14px 0 8px;
+}
+
+.acciones-ajustes .boton-secundario {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+/* Computador: "Cambiar imagen de perfil" y "Cambiar imagen de portada" lado a lado;
+   "Copiar enlace" baja a la fila de abajo. */
+@media (min-width: 700px) {
+  .acciones-ajustes {
+    grid-template-columns: 1fr 1fr;
+  }
+  .acciones-ajustes .boton-codigo-referido,
+  .acciones-ajustes .boton-copiar-enlace,
+  .acciones-ajustes .selector-portada,
+  .acciones-ajustes .texto-ayuda {
+    grid-column: auto;
+  }
+  .acciones-ajustes .boton-codigo-referido,
+  .acciones-ajustes .boton-copiar-enlace {
+    width: 100%;
+  }
+}
+
+/* El mensaje de estado ocupa todo el ancho, debajo de los botones. */
+.acciones-ajustes .texto-ayuda {
+  margin: 0;
+}
+
+.boton-codigo-referido {
+  justify-content: space-between !important;
+  gap: 12px;
+}
+
+.boton-codigo-referido > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.icono-copiar-codigo {
+  flex: 0 0 auto;
+  padding-left: 12px;
+  border-left: 1px solid currentColor;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+/* Campo opcional para quienes llegan con una invitación. */
+.campo-referido {
+  display: grid;
+  gap: 6px;
+  width: min(100%, 420px);
+  margin: 8px auto 0;
+  color: var(--color-texto);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.campo-referido input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 2px solid var(--color-borde, #3BA982);
+  border-radius: 10px;
+  background: #FFFDF7;
+  color: var(--color-texto);
+  font: inherit;
+}
+
+.fila-referido { display: flex; gap: 8px; width: 100%; }
+.fila-referido input { flex: 1; min-width: 0; }
+.fila-referido button { flex: 0 0 auto; padding: 8px 14px; }
+
+/* ---- Selector de imagen de portada (dentro de "Mi cuenta") ---- */
+.selector-portada .texto-ayuda {
+  margin-bottom: 8px;
+}
+
+.rejilla-portada {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.opcion-portada {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-texto);
+  background: #FFFDF7;
+  border: 2px solid #D8C9A8;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.opcion-portada.elegida {
+  border-color: var(--color-verde-menta-oscuro);
+  box-shadow: 0 0 0 2px var(--color-verde-menta-oscuro);
+}
+
+.muestra-portada {
+  display: block;
+  height: 54px;
+  border-radius: 6px;
+  border: 1px solid rgba(59, 46, 32, 0.25);
+  background-color: var(--color-crema);
+}
+
+@media (min-width: 700px) {
+  .rejilla-portada {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* ---- Fondos del muro (se activan con body[data-fondo-muro]) ---- */
+/* Cada fondo se define una sola vez con variables y lo usan tanto la página como las muestras. */
+[data-fondo="atardecer"] .muestra-portada,
+body[data-fondo-muro="atardecer"] {
+  background-color: #F7B267;
+  background-image:
+    radial-gradient(circle at 50% 108%, #FFF3B0 0 14%, rgba(255, 243, 176, 0) 15%),
+    linear-gradient(to bottom, #5B4B8A 0%, #B5506B 38%, #F28C5B 70%, #FFD08A 100%);
+  background-size: 100% 100%;
+  background-position: 0 0;
+}
+
+[data-fondo="cuaderno"] .muestra-portada,
+body[data-fondo-muro="cuaderno"] {
+  background-color: #FFFEF6;
+  background-image:
+    linear-gradient(to right, transparent 0 46px, rgba(214, 69, 65, 0.55) 46px 48px, transparent 48px),
+    linear-gradient(rgba(78, 140, 200, 0.35) 1px, transparent 1px),
+    linear-gradient(to right, rgba(78, 140, 200, 0.35) 1px, transparent 1px);
+  background-size: 100% 100%, 24px 24px, 24px 24px;
+  background-position: 0 0, 0 0, 0 0;
+}
+
+[data-fondo="noche"] .muestra-portada,
+body[data-fondo-muro="noche"] {
+  background-color: #14183A;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 1px, transparent 1.6px),
+    radial-gradient(circle, rgba(255, 224, 143, 0.8) 1.2px, transparent 2px),
+    linear-gradient(to bottom, #0B0E2A 0%, #232B63 60%, #3C3F86 100%);
+  background-size: 53px 53px, 97px 97px, 100% 100%;
+  background-position: 0 0, 31px 17px, 0 0;
+}
+
+body[data-fondo-muro] {
+  background-attachment: fixed;
+}
+
+/* Con un fondo elegido, los bloques del muro llevan un panel de papel para que el texto siempre se lea. */
+body[data-fondo-muro] .cabecera-perfil,
+body[data-fondo-muro] .seccion-muro,
+body[data-fondo-muro] .link-volver,
+body[data-fondo-muro] #estado-perfil:not(:empty) {
+  background-color: rgba(255, 248, 231, 0.92);
+  border-radius: 14px;
+}
+
+body[data-fondo-muro] .seccion-muro,
+body[data-fondo-muro] .cabecera-perfil {
+  padding: 14px;
+}
+
+/* Las muestras del selector usan el mismo dibujo, a escala chica. */
+[data-fondo="cuaderno"] .muestra-portada { background-size: 100% 100%, 12px 12px, 12px 12px; }
+[data-fondo="noche"] .muestra-portada { background-size: 27px 27px, 49px 49px, 100% 100%; }
+[data-fondo="predeterminado"] .muestra-portada {
+  background-image:
+    radial-gradient(circle, rgba(230, 169, 59, 0.38) 1.6px, transparent 2px),
+    radial-gradient(circle, rgba(111, 198, 163, 0.28) 1.6px, transparent 2px);
+  background-size: 22px 22px, 22px 22px;
+  background-position: 0 0, 11px 11px;
+}
+
+/* Si el mensaje está vacío no ocupa espacio. */
+.acciones-ajustes .texto-ayuda:empty {
+  display: none;
+}
+
+/* "Más información de mi cuenta": botón de ancho completo. */
+.boton-mas-info {
+  width: 100%;
+  margin: 6px 0 4px;
+}
+
+/* La nota que va al final de la información privada. */
+#info-cuenta-privada .texto-ayuda {
+  margin: 8px 0 12px;
+}
+
+
+/* -----------------------------------------------------------------
+   16) BOTONES CIRCULARES DE INTERCAMBIOS CON DIBUJO (SVG)
+   -----------------------------------------------------------------
+   "Intercambio" (dos flechas) y "Compra y venta" (carrito con moneda).
+   Ya no llevan texto: el dibujo va centrado dentro del círculo.
+------------------------------------------------------------------ */
+
+/* Centramos el dibujo dentro del círculo (antes el botón era display:block). */
+.boton-circular {
+  display: grid;
+  place-items: center;
+}
+
+/* Tamaño del dibujo y sombra para que "despegue" del botón. */
+.boton-circular .icono-boton {
+  width: 68px;
+  height: 68px;
+  display: block;
+  filter: drop-shadow(0 2px 0 rgba(59, 46, 32, 0.55));
+}
+
+/* Las flechas: solo línea blanca gruesa con extremos redondeados. */
+.boton-circular .icono-boton path {
+  fill: none;
+  stroke: #FFFFFF;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Carrito: línea blanca un poco más fina que las flechas. */
+.boton-circular .icono-boton .trazo-carrito {
+  stroke-width: 5;
+}
+
+/* Ruedas del carrito: círculos blancos rellenos. */
+.boton-circular .rueda-carrito {
+  fill: #FFFFFF;
+}
+
+/* Moneda: dorada con borde marrón, delante del carrito. */
+.boton-circular .moneda-icono {
+  fill: #F6C744;
+  stroke: #3B2E20;
+  stroke-width: 3;
+}
+
+/* El símbolo $ de la moneda. */
+.boton-circular .texto-moneda-icono {
+  fill: #3B2E20;
+  font-family: Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+/* Efecto al pasar el mouse por encima. */
+.boton-circular:hover {
+  filter: brightness(1.08);
+}
+
+/* Como ya no hay texto, marcamos con un aro cuál panel está abierto. */
+.boton-circular[aria-expanded="true"] {
+  box-shadow: var(--brillo-superior), 0 0 0 4px var(--color-papel), 0 0 0 7px var(--color-texto);
+}
+
+/* Botones de dinero diario: desaparecen mientras no se pueda reclamar (script.js) */
+.reclamo-no-disponible { display: none !important; }
+
+/* =================================================================
+   17) BOTÓN "ZONA JUEGO" (debajo de "Intercambios" en el encabezado)
+   Mismo tamaño y forma que "Intercambios", en verde menta para
+   distinguirlo. Para cambiar el color, edita el degradado de abajo.
+   ================================================================= */
+header #link-zona-juego {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  min-height: 0;
+  margin: 10px 8px 0 0;
+  padding: 6px 16px;
+  border: 1px solid #2D6B52;
+  border-radius: 999px;
+  background-image: linear-gradient(to bottom, #A6E8CB 0%, #5CB992 48%, #3E9473 52%, #4FA382 100%);
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: var(--brillo-superior), 0 3px 0 rgba(59, 46, 32, 0.35), 0 5px 8px rgba(59, 46, 32, 0.25);
+}
+header #link-zona-juego.oculto { display: none; }
+header #link-zona-juego:hover { filter: brightness(1.08); }
+header #link-zona-juego:focus-visible { outline: 3px solid var(--color-texto); outline-offset: 2px; }
+
+/* Tablet (700px a 999px): "Intercambios" en fila 2, "Zona Juego" en fila 3, dinero en fila 4 */
+header #link-zona-juego:not(.oculto) ~ #monedas-usuario { grid-row: 4; }
+
+/* Computador (1000px o más): queda en la columna de "Intercambios", una fila más abajo.
+   El título, el dinero y "Mi perfil" se centran verticalmente a lo alto de los dos botones. */
+@media (min-width: 1000px) {
+  header #link-zona-juego { grid-column: 2; grid-row: 2; justify-self: end; margin: 10px 14px 0 0; }
+  header:has(#link-zona-juego:not(.oculto)) h1 { grid-row: 1 / span 2; }
+  header:has(#link-zona-juego:not(.oculto)) #monedas-usuario,
+  header:has(#link-zona-juego:not(.oculto)) #link-mi-coleccion { grid-row: 1 / span 2; align-self: center; }
+  header #link-zona-juego:not(.oculto) ~ #monedas-usuario { grid-column: 3; grid-row: 1 / span 2; }
+}
+
+/* Celular (menos de 700px): fila 2 de la barra, centrada, justo bajo "Intercambios".
+   El dinero baja a la fila 3. */
+@media (max-width: 699px) {
+  header .barra-header #link-zona-juego {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+    margin: 0;
+  }
+  header .barra-header #link-zona-juego:not(.oculto) ~ #monedas-usuario {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-self: center;
+    margin: 0;
+    white-space: nowrap;
+  }
+}
+
+/* Tablet (700px a 999px): el encabezado fluye en línea; "Zona Juego" ocupa su propia
+   línea, centrada, justo debajo de "Intercambios" (y el dinero queda debajo de ambos). */
+@media (min-width: 700px) and (max-width: 999px) {
+  header #link-zona-juego {
+    display: flex;
+    width: fit-content;
+    margin: 10px auto 0;
+  }
+}
+
+/* =================================================================
+   18) ZONA JUEGO: BOTONES DE JUEGOS (zona-juego.html)
+   Cada juego es un botón grande con su dibujo arriba y el nombre
+   abajo. Se acomodan solos: más columnas en computador, menos en celular.
+   ================================================================= */
+.grilla-juegos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.boton-juego {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 150px;
+  padding: 16px 10px;
+  text-decoration: none;
+  text-align: center;
+  color: var(--color-texto);
+  font-family: var(--fuente-titulos);
+  font-weight: 700;
+  font-size: 1.15rem;
+  background-color: var(--color-papel);
+  background-image: linear-gradient(to bottom, #FFFDF7 0%, #FFF1CE 100%);
+  border: 3px solid var(--color-mostaza);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--brillo-superior), 0 3px 0 rgba(59, 46, 32, 0.3), 0 6px 10px rgba(59, 46, 32, 0.2);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.boton-juego:hover { transform: translateY(-3px); filter: brightness(1.04); }
+.boton-juego:active { transform: translateY(1px); }
+.boton-juego:focus-visible { outline: 3px solid var(--color-verde-menta); outline-offset: 3px; }
+
+.boton-juego svg { width: 76px; height: 76px; flex: none; }
+.boton-juego .tazo-borde { fill: #F6C744; stroke: #3B2E20; stroke-width: 3; }
+.boton-juego .tazo-anillo { fill: #FFFDF7; stroke: #C6402E; stroke-width: 3; }
+.boton-juego .tazo-centro { fill: #C6402E; }
+
+@media (prefers-reduced-motion: reduce) {
+  .boton-juego { transition: none; }
+  .boton-juego:hover, .boton-juego:active { transform: none; }
+}
+
+/* Celular: dos botones por fila */
+@media (max-width: 480px) {
+  .grilla-juegos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .boton-juego { min-height: 130px; }
+  .boton-juego svg { width: 64px; height: 64px; }
+}
+
+/* =================================================================
+   19) INSIGNIA DE TIPO EN LAS TARJETAS DE INTERCAMBIOS / VENTAS
+   Círculo rojo en la esquina superior derecha con el mismo dibujo
+   del botón correspondiente: flechas = intercambio, carrito = venta.
+   ================================================================= */
+.tarjeta-con-insignia { position: relative; }
+
+/* El título deja espacio a la derecha para no quedar debajo de la insignia. */
+.tarjeta-con-insignia > div > strong { padding-right: 52px; }
+
+.insignia-tipo {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #7E2013;
+  border-radius: 50%;
+  background-image: linear-gradient(to bottom, #F58A74 0%, #DC4A33 48%, #B8301D 52%, #CF4630 100%);
+  box-shadow: var(--brillo-superior), 0 2px 0 rgba(59, 46, 32, 0.35), 0 3px 6px rgba(59, 46, 32, 0.25);
+}
+
+.insignia-tipo svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+  filter: drop-shadow(0 1px 0 rgba(59, 46, 32, 0.55));
+}
+
+.insignia-tipo svg path { fill: none; stroke: #FFFFFF; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.insignia-tipo svg .trazo-carrito { stroke-width: 5; }
+.insignia-tipo svg .rueda-carrito { fill: #FFFFFF; }
+.insignia-tipo svg .moneda-icono { fill: #F6C744; stroke: #3B2E20; stroke-width: 3; }
+.insignia-tipo svg .texto-moneda-icono { fill: #3B2E20; font-family: Arial, sans-serif; font-size: 18px; font-weight: 900; }
+
+/* El intercambio es solo una marca visual, no un botón. */
+.insignia-intercambio {
+  width: 25px;
+  height: 25px;
+  top: 12px;
+  right: 12px;
+  border: 2px dashed rgba(126, 32, 19, 0.88);
+  border-radius: 44% 56% 49% 51% / 56% 43% 57% 44%;
+  background: #D94A32;
+  box-shadow: none;
+  opacity: 0.9;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+.insignia-intercambio svg {
+  width: 17px;
+  height: 17px;
+  filter: none;
+  transform: rotate(8deg);
+}
+.insignia-intercambio svg path { stroke-width: 7; }
+.tarjeta-con-insignia > div > strong { padding-right: 38px; }
+
+@media (max-width: 480px) {
+  .insignia-tipo { width: 38px; height: 38px; top: 6px; right: 6px; }
+  .insignia-tipo svg { width: 24px; height: 24px; }
+  .tarjeta-con-insignia > div > strong { padding-right: 44px; }
+  .insignia-intercambio { width: 23px; height: 23px; top: 9px; right: 9px; }
+  .insignia-intercambio svg { width: 15px; height: 15px; }
+  .tarjeta-con-insignia > div > strong { padding-right: 34px; }
+}
+
+/* ===== Exhibidor del perfil (hasta 3 tazos) ===== */
+.cabecera-exhibidor {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.seccion-exhibidor.oculto { display: none; }
+.boton-editar-exhibidor.oculto { display: none; }
+.seccion-exhibidor .lista-exhibidor {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.lista-exhibidor li { padding: 8px; border-color: var(--color-rojo-cereza); }
+.lista-exhibidor li strong { font-size: 0.8rem; }
+.lista-exhibidor li.hueco-exhibidor {
+  padding: 0;
+  border-style: dashed;
+  border-color: var(--color-mostaza);
+  background-color: transparent;
+  box-shadow: none;
+}
+.boton-hueco-exhibidor {
+  display: flex;
+  width: 100%;
+  min-height: 120px;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: var(--color-texto-suave);
+  font: inherit;
+  cursor: pointer;
+}
+.boton-hueco-exhibidor span { font-size: 2rem; line-height: 1; font-weight: 800; color: var(--color-mostaza-oscuro); }
+.boton-hueco-exhibidor small { font-size: 0.78rem; font-weight: 600; }
+.boton-hueco-exhibidor:hover span,
+.boton-hueco-exhibidor:focus-visible span { color: var(--color-rojo-cereza); }
+.boton-hueco-exhibidor:focus-visible { outline: 3px solid var(--color-verde-menta-oscuro); outline-offset: -3px; border-radius: var(--radio-borde-chico); }
+
+/* Botón de ajustes minimalista en la línea del título "Exhibidor" (solo lo ve el dueño) */
+.boton-ajustes-exhibidor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1.5px solid #8A5E10;
+  border-radius: 50%;
+  background-image: linear-gradient(to bottom, #FFFFFF 0%, var(--color-papel) 45%, #F3D9A0 100%);
+  color: var(--color-texto);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(59, 46, 32, 0.3);
+  transition: transform 0.4s ease;
+}
+.boton-ajustes-exhibidor:hover,
+.boton-ajustes-exhibidor:focus-visible {
+  transform: rotate(60deg);
+  outline: 2px solid var(--color-verde-menta);
+  outline-offset: 2px;
+}
+/* Cuando el modo edición está activo, el botón se ve "presionado" */
+.boton-ajustes-exhibidor.activo {
+  background-image: none;
+  background-color: var(--color-verde-menta);
+  color: var(--color-blanco);
+}
+.boton-ajustes-exhibidor.oculto { display: none; }
+
+/* Botones "Cambiar" y "Quitar" debajo de cada tazo del exhibidor (solo los ve el dueño en modo edición) */
+.acciones-casilla-exhibidor { display: flex; gap: 6px; justify-content: center; margin-top: 8px; }
+.boton-mini-exhibidor {
+  padding: 4px 10px;
+  border: 2px solid var(--color-verde-menta-oscuro);
+  border-radius: var(--radio-borde-chico);
+  background: transparent;
+  color: var(--color-verde-menta-oscuro);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.boton-mini-exhibidor.boton-mini-quitar { border-color: var(--color-rojo-cereza); color: var(--color-rojo-cereza); }
+.boton-mini-exhibidor:disabled { opacity: 0.5; cursor: default; }
+
+/* Ventana para elegir los tazos del exhibidor */
+.detalle-articulo.editor-exhibidor { width: min(100%, 560px); }
+.editor-exhibidor h2 { margin-top: 0; }
+.contador-exhibidor { margin: 4px 0 10px; font-weight: 700; color: var(--color-rojo-cereza); }
+.rejilla-exhibidor {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  max-height: 46vh;
+  overflow: auto;
+  padding: 4px;
+  text-align: center;
+}
+.opcion-exhibidor { position: relative; }
+.opcion-exhibidor img { width: 64px; height: 64px; border-radius: 50%; }
+.opcion-exhibidor.elegida { border-color: var(--color-rojo-cereza); background: #fff1d6; }
+.opcion-exhibidor.elegida::after {
+  content: attr(data-orden);
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-rojo-cereza);
+  color: var(--color-blanco);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.acciones-exhibidor { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 12px; }
+
+/* ===== Giro libre de 360° del detalle (mantener presionado / doble toque y mantener) ===== */
+.rotor-tazo {
+  display: block;
+  width: 100%;
+  touch-action: none;                 /* el dedo gira el tazo en vez de desplazar la página */
+  -webkit-touch-callout: none;
+  transform-origin: 50% 50%;
+}
+.rotor-tazo img {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Los giros pueden sacar las esquinas fuera de la tarjeta: sin barra lateral. */
+.detalle-articulo.con-giro { overflow-x: hidden; }
+.pista-giro { margin: 6px 0 0; font-size: 0.8rem; }
+/* Mientras se mantiene / gira, el cursor se vuelve una mano (sin brillo) */
+.giro-listo, .giro-listo * { cursor: grab !important; }
+.girando, .girando * { cursor: grabbing !important; }
+
+/* ---- Ventana de detalle de una opción de producto (producto.html) ---- */
+.modal-detalle-producto {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background-color: rgba(59, 46, 32, 0.72);
+  background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.12) 0 2px, transparent 2px 6px);
+}
+
+.detalle-producto {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  width: min(100%, 760px);
+  max-height: 92vh;
+  overflow: auto;
+  padding: 24px;
+  background-color: var(--color-papel);
+  background-image: linear-gradient(to bottom, #FFFFFF 0%, var(--color-papel) 40%);
+  border: 3px solid #8A5E10;
+  border-radius: var(--radio-borde);
+  box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 6px var(--color-mostaza), 0 16px 30px rgba(59, 46, 32, 0.45);
+}
+
+.detalle-producto-cerrar {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #7E2013;
+  border-radius: 6px;
+  background-image: linear-gradient(to bottom, #F58A74 0%, #DC4A33 48%, #B8301D 52%, #CF4630 100%);
+  color: #FFFFFF;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.detalle-producto-imagen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: start;
+  aspect-ratio: 1 / 1;
+  padding: 10px;
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-blanco);
+  box-shadow: inset 0 0 0 2px rgba(224, 168, 46, 0.35);
+}
+
+.detalle-producto-imagen img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 14px rgba(59, 46, 32, 0.25));
+}
+
+.detalle-producto-imagen.sin-imagen {
+  color: var(--color-texto-suave);
+  font-weight: 700;
+}
+
+.detalle-producto-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding-right: 24px;
+  text-align: left;
+}
+
+.detalle-producto-info h2 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-size: 1.6rem;
+  color: var(--color-rojo-cereza);
+  text-shadow: 1px 1px 0 #FFFFFF, 2px 2px 0 rgba(198, 64, 46, 0.25);
+}
+
+.detalle-producto-info h3 {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  color: var(--color-texto);
+}
+
+.detalle-producto-descripcion {
+  margin: 0;
+  color: var(--color-texto-suave);
+  line-height: 1.4;
+}
+
+.detalle-producto-premios {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 150px;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.detalle-producto-premios li {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background-color: rgba(224, 168, 46, 0.22);
+  color: var(--color-texto);
+  font-size: 0.85rem;
+}
+
+.detalle-producto-compra {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .detalle-producto {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .detalle-producto-imagen {
+    width: min(100%, 260px);
+    margin: 0 auto;
+  }
+
+  .detalle-producto-info {
+    padding-right: 0;
+  }
+}
+
+
+/* =================================================================
+   Decoración de los botones del modal "Mi cuenta"
+   -----------------------------------------------------------------
+   Todo es solo CSS (dibujos SVG incrustados), así que el texto de los
+   botones puede cambiar desde JavaScript sin perder la decoración.
+================================================================= */
+
+/* ---- "Más información de mi cuenta": signos de pregunta + usuarios (red social) ---- */
+.boton-mas-info {
+  position: relative;          /* para poder ubicar los dibujos en las esquinas */
+  overflow: hidden;            /* nada se sale del borde redondeado */
+  padding: 0 64px;             /* deja espacio a los lados para los dibujos */
+  background-image: linear-gradient(to bottom, #FFFDF5 0%, #FFF3D6 100%);  /* fondo cálido muy suave */
+}
+/* Dibujo de la izquierda: tres signos de pregunta de distinto tamaño. */
+.boton-mas-info::before,
+.boton-mas-info::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 56px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.55;               /* discreto: no le quita protagonismo al texto */
+  pointer-events: none;        /* los dibujos no interfieren con el clic */
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.boton-mas-info::before { left: 6px;  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2064%2036%27%3E%3Cg%20transform%3D%27translate%2814%2018%29%20scale%281.15%29%20rotate%28-12%29%27%3E%3Cpath%20d%3D%27M-4%20-4%20a4%204%200%201%201%206%203.4%20c-1.6%201%20-2%201.8%20-2%203.4%27%20fill%3D%27none%27%20stroke%3D%27%234FA382%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3Ccircle%20cx%3D%270%27%20cy%3D%279.5%27%20r%3D%271.4%27%20fill%3D%27%234FA382%27%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate%2836%2012%29%20scale%280.7%29%20rotate%288%29%27%20opacity%3D%270.7%27%3E%3Cpath%20d%3D%27M-4%20-4%20a4%204%200%201%201%206%203.4%20c-1.6%201%20-2%201.8%20-2%203.4%27%20fill%3D%27none%27%20stroke%3D%27%234FA382%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3Ccircle%20cx%3D%270%27%20cy%3D%279.5%27%20r%3D%271.4%27%20fill%3D%27%234FA382%27%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate%2852%2024%29%20scale%280.55%29%20rotate%28-6%29%27%20opacity%3D%270.5%27%3E%3Cpath%20d%3D%27M-4%20-4%20a4%204%200%201%201%206%203.4%20c-1.6%201%20-2%201.8%20-2%203.4%27%20fill%3D%27none%27%20stroke%3D%27%234FA382%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3Ccircle%20cx%3D%270%27%20cy%3D%279.5%27%20r%3D%271.4%27%20fill%3D%27%234FA382%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+/* Dibujo de la derecha: usuarios minimalistas conectados entre sí. */
+.boton-mas-info::after  { right: 6px; background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2064%2036%27%3E%3Cpath%20d%3D%27M18%2015%20L34%2010%20M38%2012%20L52%2020%27%20stroke%3D%27%234FA382%27%20stroke-width%3D%271.2%27%20stroke-dasharray%3D%272%202.5%27%20stroke-linecap%3D%27round%27%20opacity%3D%270.6%27%20fill%3D%27none%27%2F%3E%3Cg%20transform%3D%27translate%2814%2017%29%27%3E%3Ccircle%20cx%3D%270%27%20cy%3D%27-3.2%27%20r%3D%273.4%27%20fill%3D%27none%27%20stroke%3D%27%234FA382%27%20stroke-width%3D%271.8%27%2F%3E%3Cpath%20d%3D%27M-6.5%207.5%20a6.5%205.5%200%200%201%2013%200%27%20fill%3D%27none%27%20stroke%3D%27%234FA382%27%20stroke-width%3D%271.8%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate%2836%2012%29%20scale%280.75%29%27%20opacity%3D%270.75%27%3E%3Ccircle%20cx%3D%270%27%20cy%3D%27-3.2%27%20r%3D%273.4%27%20fill%3D%27none%27%20stroke%3D%27%234FA382%27%20stroke-width%3D%271.8%27%2F%3E%3Cpath%20d%3D%27M-6.5%207.5%20a6.5%205.5%200%200%201%2013%200%27%20fill%3D%27none%27%20stroke%3D%27%234FA382%27%20stroke-width%3D%271.8%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%27translate%2854%2023%29%20scale%280.6%29%27%20opacity%3D%270.55%27%3E%3Ccircle%20cx%3D%270%27%20cy%3D%27-3.2%27%20r%3D%273.4%27%20fill%3D%27none%27%20stroke%3D%27%234FA382%27%20stroke-width%3D%271.8%27%2F%3E%3Cpath%20d%3D%27M-6.5%207.5%20a6.5%205.5%200%200%201%2013%200%27%20fill%3D%27none%27%20stroke%3D%27%234FA382%27%20stroke-width%3D%271.8%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+.boton-mas-info:hover::before,
+.boton-mas-info:hover::after,
+.boton-mas-info:focus-visible::before,
+.boton-mas-info:focus-visible::after {
+  opacity: 0.9;
+  transform: scale(1.06);
+}
+
+/* ---- "Mi código de referido": toque discreto de regalo ---- */
+.boton-codigo-referido {
+  border-color: var(--color-mostaza-oscuro);   /* borde dorado en vez de verde: sugiere "premio" */
+  background-image: linear-gradient(to bottom, #FFFDF5 0%, #FFF1CF 100%);
+}
+/* Regalito pequeño a la izquierda del texto. */
+.boton-codigo-referido::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Crect%20x%3D%274.5%27%20y%3D%2712%27%20width%3D%2715%27%20height%3D%279%27%20rx%3D%271.2%27%20fill%3D%27%23E6A93B%27%20stroke%3D%27%238A5E10%27%20stroke-width%3D%271.2%27%2F%3E%3Crect%20x%3D%273%27%20y%3D%278%27%20width%3D%2718%27%20height%3D%274%27%20rx%3D%271.2%27%20fill%3D%27%23C6402E%27%20stroke%3D%27%238A5E10%27%20stroke-width%3D%271.2%27%2F%3E%3Crect%20x%3D%2711%27%20y%3D%278%27%20width%3D%272%27%20height%3D%2713%27%20fill%3D%27%23FFF8E7%27%2F%3E%3Cpath%20d%3D%27M12%208%20C9%208%207%206.5%208%205%20C9.2%203.3%2011.5%205%2012%208%20C12.5%205%2014.8%203.3%2016%205%20C17%206.5%2015%208%2012%208%27%20fill%3D%27none%27%20stroke%3D%27%23C6402E%27%20stroke-width%3D%271.4%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M21%200.8%20l.8%202%202%20.8%20-2%20.8%20-.8%202%20-.8%20-2%20-2%20-.8%202%20-.8z%27%20fill%3D%27%23E6A93B%27%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+  transform-origin: 50% 90%;
+  animation: regalo-saludo 6s ease-in-out 2s infinite;   /* se mueve apenas, cada 6 segundos */
+}
+.boton-codigo-referido:hover::before,
+.boton-codigo-referido:focus-visible::before {
+  animation: none;
+  transform: translateY(-2px) rotate(-8deg) scale(1.1);   /* al pasar el mouse "salta" un poquito */
+}
+.boton-codigo-referido:hover {
+  border-color: var(--color-rojo-cereza);
+  box-shadow: 0 0 0 3px rgba(230, 169, 59, 0.25);         /* suave brillo dorado */
+}
+@keyframes regalo-saludo {
+  0%, 88%, 100% { transform: rotate(0) scale(1); }
+  91% { transform: rotate(-12deg) scale(1.08); }
+  94% { transform: rotate(10deg) scale(1.08); }
+  97% { transform: rotate(-5deg); }
+}
+/* Si la persona prefiere menos movimiento, el regalito se queda quieto. */
+@media (prefers-reduced-motion: reduce) {
+  .boton-codigo-referido::before { animation: none; }
+}
+
+/* Celulares: dibujos y espacios más chicos para que el texto quepa. */
+@media (max-width: 480px) {
+  .boton-mas-info { padding: 0 44px; }
+  .boton-mas-info::before,
+  .boton-mas-info::after { width: 38px; }
+  .boton-mas-info::before { left: 3px; }
+  .boton-mas-info::after  { right: 3px; }
+}
+
+
+/* ---- Nota breve bajo "Mi código de referido" (aparece al mostrar el código) ---- */
+.bloque-referido {
+  min-width: 0;                /* permite que el bloque se encoja dentro de la rejilla */
+}
+.nota-referido {
+  margin: 8px 4px 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--color-texto-suave);
+  animation: nota-referido-entra 0.35s ease both;   /* aparece suavemente */
+}
+.nota-referido strong {
+  color: var(--color-mostaza-oscuro);               /* resalta el beneficio con el dorado del regalito */
+  font-weight: 700;
+}
+.nota-referido.oculto { display: none; }
+/* El botón "Copiar enlace" no se estira cuando la nota hace más alto el bloque de al lado. */
+.acciones-ajustes .boton-copiar-enlace { align-self: start; }
+@keyframes nota-referido-entra {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nota-referido { animation: none; }
+}
