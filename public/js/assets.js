@@ -27,6 +27,7 @@
     "Fondos y decoración",
     "Íconos y botones",
     "Coleccionables",
+    "Fotos de perfil",
     "Tienda y lugares",
     "Otros"
   ];
@@ -69,6 +70,12 @@
     { nombre: "Moneda de 100 pesos (escudo)", archivo: "assets/img/moneda-100-escudo.png", categoria: "Billetes y monedas" },
     { nombre: "Escena del regalo: mamá entrega monedas", archivo: "assets/img/escena-recompensa-1-mama.png", categoria: "Fondos y decoración" },
     { nombre: "Escena del regalo: pensando", archivo: "assets/img/escena-recompensa-2-pensando.png", categoria: "Fondos y decoración" },
+    { nombre: "Foto de perfil: monedas", archivo: "assets/img/5monedaschile.jpg", categoria: "Fotos de perfil" },
+    { nombre: "Foto de perfil: guerrero dorado", archivo: "assets/img/album-guerrerodorado.jpg", categoria: "Fotos de perfil" },
+    { nombre: "Foto de perfil: Cheetos tazos", archivo: "assets/img/cheetos-tazos.png", categoria: "Fotos de perfil" },
+    { nombre: "Foto de perfil: regalo", archivo: "assets/img/escena-recompensa-1-mama.png", categoria: "Fotos de perfil" },
+    { nombre: "Foto de perfil: pensando", archivo: "assets/img/escena-recompensa-2-pensando.png", categoria: "Fotos de perfil" },
+    { nombre: "Foto de perfil: coleccionable", archivo: "assets/img/hqdefault.jpg", categoria: "Fotos de perfil" },
     { nombre: "Imagen de respaldo de productos (Cheetos tazos)", archivo: "assets/img/cheetos-tazos.png", categoria: "Tienda y lugares" }
   ];
   const contenedorEnUso = $("assets-en-uso");

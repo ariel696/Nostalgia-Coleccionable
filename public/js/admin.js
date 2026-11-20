@@ -59,9 +59,6 @@ const botonGuardarProducto = formNuevoProducto.querySelector(".boton-comprar"); 
 const botonCancelarEdicion = document.getElementById("boton-cancelar-edicion");
 const parametrosAdmin = new URLSearchParams(window.location.search);
 const idEditarInicial = parametrosAdmin.get("editar");
-const inputBuscarUsuarioRoot = document.getElementById("input-buscar-usuario-root");
-const listaUsuariosRoot = document.getElementById("lista-usuarios-root");
-let usuariosRoot = [];
 
 // Esta variable es una "bandera": true mientras hay una subida a
 // Cloudinary en curso, false el resto del tiempo. La usamos para
@@ -770,14 +767,33 @@ function agregarFilaPremio(contenedorPremios, premioExistente = {}) {
     filaPremio.remove();
   });
 
-  filaPremio.appendChild(inputNombrePremio);
-  filaPremio.appendChild(inputArchivoPremio);
-  filaPremio.appendChild(inputImagenPremio);
-  filaPremio.appendChild(previewPremio);
-  filaPremio.appendChild(crearBotonEditarImagen(inputImagenPremio, previewPremio, estadoPremio, "Ajustar imagen frontal", () => ({ url: inputImagenTraseraPremio.value, etiqueta: "Reverso" })));
+  // --- Bloque de la imagen DELANTERA (queda justo encima del bloque de la trasera) ---
+  // Es un contenedor propio, igual al de la imagen trasera, para que ambas
+  // se vean una debajo de la otra con el mismo formato.
+  const filaFrontalPremio = document.createElement("div");
+  // Esta clase le da el mismo estilo (fila flexible) que tiene la trasera.
+  filaFrontalPremio.className = "fila-frontal-premio";
+  // Botón para elegir el archivo de la imagen delantera.
+  filaFrontalPremio.appendChild(inputArchivoPremio);
+  // Campo oculto que guarda la URL de la imagen delantera ya subida.
+  filaFrontalPremio.appendChild(inputImagenPremio);
+  // Vista previa pequeña de la imagen delantera.
+  filaFrontalPremio.appendChild(previewPremio);
+  // Botón "Ajustar" para recortar/girar la imagen delantera.
+  filaFrontalPremio.appendChild(crearBotonEditarImagen(inputImagenPremio, previewPremio, estadoPremio, "Ajustar imagen frontal", () => ({ url: inputImagenTraseraPremio.value, etiqueta: "Reverso" })));
+  // Texto de estado de la imagen delantera ("Imagen del premio subida.", etc.).
+  filaFrontalPremio.appendChild(estadoPremio);
+
+  // --- Orden final de la fila del premio, de arriba hacia abajo ---
+  // 1) Número en la colección.
   filaPremio.appendChild(inputNumeroPremio);
+  // 2) Nombre del premio.
+  filaPremio.appendChild(inputNombrePremio);
+  // 3) Imagen delantera.
+  filaPremio.appendChild(filaFrontalPremio);
+  // 4) Imagen trasera (justo debajo de la delantera).
   filaPremio.appendChild(filaTraseraPremio);
-  filaPremio.appendChild(estadoPremio);
+  // 5) Botón para quitar el premio completo.
   filaPremio.appendChild(botonEliminarPremio);
   contenedorPremios.appendChild(filaPremio);
 }
@@ -791,6 +807,13 @@ function agregarFilaOpcion(opcionExistente = {}) {
   inputNombre.placeholder = "Nombre del producto (ej: Carta Goku)";
   inputNombre.className = "input-nombre-opcion";
   inputNombre.value = opcionExistente.nombre || "";
+
+  const inputSubtitulo = document.createElement("input");
+  inputSubtitulo.type = "text";
+  inputSubtitulo.placeholder = "Subtítulo (ej: Álbum Dragon Ball)";
+  inputSubtitulo.className = "input-subtitulo-opcion";
+  inputSubtitulo.maxLength = 80;
+  inputSubtitulo.value = opcionExistente.subtitulo || "";
 
   const inputPrecio = document.createElement("input");
   inputPrecio.type = "number";
@@ -877,6 +900,7 @@ function agregarFilaOpcion(opcionExistente = {}) {
   const filaPrincipal = document.createElement("div");
   filaPrincipal.className = "fila-opcion-principal";
   filaPrincipal.appendChild(inputNombre);
+  filaPrincipal.appendChild(inputSubtitulo);
   filaPrincipal.appendChild(inputPrecio);
   filaPrincipal.appendChild(selectorTipo);
   filaPrincipal.appendChild(inputArchivo);
@@ -942,6 +966,7 @@ function leerOpcionesDelFormulario() {
 
   filas.forEach((fila) => {
     const nombre = fila.querySelector(".input-nombre-opcion").value.trim();
+    const subtitulo = fila.querySelector(".input-subtitulo-opcion").value.trim();
     const precioTexto = fila.querySelector(".input-precio-opcion").value;
     const precio = Number(precioTexto);
     const tipo = fila.querySelector(".select-tipo-opcion").value;
@@ -952,7 +977,7 @@ function leerOpcionesDelFormulario() {
     // Si el usuario dejó una fila vacía (sin nombre), la ignoramos
     // en vez de guardar una opción rota.
     if (nombre === "" || !precioTexto || precio <= 0 || !Number.isInteger(precio)) {
-      if (nombre !== "" || precioTexto || imagen !== "") {
+      if (nombre !== "" || subtitulo !== "" || precioTexto || imagen !== "") {
         filaIncompleta = true;
       }
       return;
@@ -992,6 +1017,7 @@ function leerOpcionesDelFormulario() {
     opciones.push({
       id: generarId(nombre),
       nombre: nombre,
+      subtitulo: subtitulo,
       precio: precio,
       imagen: imagen,
       tipo: tipo,
@@ -1201,125 +1227,6 @@ function cargarProductosExistentes() {
 botonCancelarEdicion.addEventListener("click", limpiarFormularioLugar);
 
 // -----------------------------------------------------------------
-// 9) LIMPIEZA ROOT DE DATOS DE PRUEBA
-// -----------------------------------------------------------------
-function nombreVisibleUsuarioRoot(d) {
-  return d.nombreUsuario || d.nombre || d.displayName || "Usuario sin nombre";
-}
-
-async function confirmarRoot(mensaje) {
-  return window.confirm(mensaje + "\n\nEsta acción no se puede deshacer desde la página.");
-}
-
-async function comprometerBorradosRoot(documentos) {
-  for (let i = 0; i < documentos.length; i += 400) {
-    const lote = db.batch();
-    documentos.slice(i, i + 400).forEach((doc) => lote.delete(doc.ref));
-    if (documentos.slice(i, i + 400).length) await lote.commit();
-  }
-}
-
-async function documentosMercadoDeUsuario(uid) {
-  const [ventas, intercambios, propuestas] = await Promise.all([
-    db.collection("ventas").get(),
-    db.collection("intercambios").get(),
-    db.collection("propuestasIntercambio").get()
-  ]);
-  return [
-    ...ventas.docs.filter((d) => {
-      const x = d.data() || {};
-      return x.ownerUid === uid || x.compradorUid === uid;
-    }),
-    ...intercambios.docs.filter((d) => (d.data() || {}).ownerUid === uid),
-    ...propuestas.docs.filter((d) => {
-      const x = d.data() || {};
-      return x.ownerUid === uid || x.fromUid === uid;
-    })
-  ];
-}
-
-async function restablecerUsuarioRoot(uid) {
-  await Promise.all([
-    db.collection("usuarios").doc(uid).set({ monedas: 0, coleccionables: [] }, { merge: true }),
-    db.collection("perfilesPublicos").doc(uid).set({ coleccionables: [] }, { merge: true })
-  ]);
-}
-
-async function limpiarMercadoUsuarioRoot(uid) {
-  await comprometerBorradosRoot(await documentosMercadoDeUsuario(uid));
-}
-
-async function eliminarDatosUsuarioRoot(uid) {
-  await limpiarMercadoUsuarioRoot(uid);
-  const nombres = await db.collection("nombresUsuario").where("uid", "==", uid).get();
-  const referidos = await db.collection("referidos").doc(uid).get();
-  const documentos = [...nombres.docs];
-  if (referidos.exists) documentos.push(referidos);
-  await comprometerBorradosRoot(documentos);
-  await Promise.all([
-    db.collection("usuarios").doc(uid).delete(),
-    db.collection("perfilesPublicos").doc(uid).delete()
-  ]);
-}
-
-function botonLimpiezaRoot(texto, clase, accion) {
-  const b = document.createElement("button");
-  b.type = "button"; b.textContent = texto; b.className = clase;
-  b.addEventListener("click", async () => {
-    b.disabled = true;
-    try { await accion(); await cargarUsuariosRoot(); }
-    catch (e) { console.error(e); window.alert("No se pudo completar la limpieza: " + (e.message || "error desconocido")); }
-    finally { b.disabled = false; }
-  });
-  return b;
-}
-
-function pintarUsuariosRoot() {
-  const q = (inputBuscarUsuarioRoot.value || "").trim().toLowerCase();
-  listaUsuariosRoot.innerHTML = "";
-  const encontrados = usuariosRoot.filter((u) => {
-    const d = u.data || {};
-    return !q || [u.id, d.nombreUsuario, d.nombre, d.displayName, d.email].some((v) => String(v || "").toLowerCase().includes(q));
-  });
-  if (!encontrados.length) { listaUsuariosRoot.appendChild(document.createElement("p")).textContent = "No se encontraron usuarios."; return; }
-  encontrados.forEach((u) => {
-    const d = u.data || {};
-    const fila = document.createElement("div"); fila.className = "tarjeta-usuario-root";
-    const info = document.createElement("div");
-    const nombre = document.createElement("strong"); nombre.textContent = nombreVisibleUsuarioRoot(d);
-    const uid = document.createElement("span"); uid.className = "detalle"; uid.textContent = "UID: " + u.id;
-    info.append(nombre, uid);
-    const acciones = document.createElement("div"); acciones.className = "acciones-intercambio";
-    acciones.append(
-      botonLimpiezaRoot("Restablecer monedas y colección", "boton-secundario", async () => {
-        if (await confirmarRoot("¿Restablecer monedas y colección de " + nombreVisibleUsuarioRoot(d) + "?")) await restablecerUsuarioRoot(u.id);
-      }),
-      botonLimpiezaRoot("Eliminar ventas e intercambios", "boton-secundario", async () => {
-        if (await confirmarRoot("¿Eliminar las ventas, ofertas y propuestas de " + nombreVisibleUsuarioRoot(d) + "?")) await limpiarMercadoUsuarioRoot(u.id);
-      }),
-      botonLimpiezaRoot("Restablecer todo", "boton-comprar", async () => {
-        if (await confirmarRoot("¿Restablecer colección, monedas y mercado de " + nombreVisibleUsuarioRoot(d) + "?")) {
-          await restablecerUsuarioRoot(u.id); await limpiarMercadoUsuarioRoot(u.id);
-        }
-      }),
-      botonLimpiezaRoot("Eliminar datos de cuenta", "boton-secundario", async () => {
-        if (await confirmarRoot("¿Eliminar todos los datos de Firestore de " + nombreVisibleUsuarioRoot(d) + "?")) await eliminarDatosUsuarioRoot(u.id);
-      })
-    );
-    fila.append(info, acciones); listaUsuariosRoot.appendChild(fila);
-  });
-}
-
-async function cargarUsuariosRoot() {
-  listaUsuariosRoot.textContent = "Cargando usuarios...";
-  const snap = await db.collection("usuarios").get();
-  usuariosRoot = snap.docs.map((d) => ({ id: d.id, data: d.data() || {} })).sort((a, b) => nombreVisibleUsuarioRoot(a.data).localeCompare(nombreVisibleUsuarioRoot(b.data), "es"));
-  pintarUsuariosRoot();
-}
-
-inputBuscarUsuarioRoot.addEventListener("input", pintarUsuariosRoot);
-
-// -----------------------------------------------------------------
 // 8) EL "CEREBRO" DE ESTA PÁGINA: revisa sesión Y email al cargar
 // -----------------------------------------------------------------
 auth.onAuthStateChanged((usuario) => {
@@ -1329,7 +1236,6 @@ auth.onAuthStateChanged((usuario) => {
     panelAdmin.classList.remove("oculto");
     infoAdminRoot.classList.remove("oculto");
     cargarProductosExistentes();
-    cargarUsuariosRoot();
     cargarLugarInicialParaEditar();
   } else {
     // Cualquier otro caso (nadie logeado, o logeado con OTRA cuenta):

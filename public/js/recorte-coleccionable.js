@@ -13,14 +13,95 @@ function esPixelFondo(d, i) {
   return mn >= 215 && (mx - mn) <= 30;
 }
 
+// Aprende cómo es el fondo de ESTA imagen mirando sus bordes (en vez de suponer
+// que siempre es blanco). Sirve para fondos celestes, degradados, grises, etc.
+// Devuelve una lista de 0/1 (una por píxel): 1 = fondo, o null si no se pudo aprender.
+// Cómo funciona:
+//   1) Mira el marco de píxeles del borde de la imagen y anota qué colores hay (paleta).
+//   2) Parte desde el borde y se "expande" por todos los píxeles parecidos a esa paleta
+//      que estén conectados con el borde. Lo que queda sin tocar es la figura.
+function calcularMascaraFondoPorBordes(d, w, h) {
+  const grosor = Math.max(2, Math.round(Math.min(w, h) * 0.01));
+  // Recorre el marco del borde y cuenta los colores (agrupados de 16 en 16 por canal).
+  const cuentas = new Map();
+  let total = 0;
+  const anotar = (p) => {
+    const i = p * 4;
+    if (d[i + 3] < 128) return;
+    const clave = (d[i] >> 4) * 256 + (d[i + 1] >> 4) * 16 + (d[i + 2] >> 4);
+    const e = cuentas.get(clave) || { n: 0, r: 0, g: 0, b: 0 };
+    e.n++; e.r += d[i]; e.g += d[i + 1]; e.b += d[i + 2];
+    cuentas.set(clave, e);
+    total++;
+  };
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (x < grosor || y < grosor || x >= w - grosor || y >= h - grosor) anotar(y * w + x);
+    }
+  }
+  if (total === 0) return null;
+  // Paleta: los colores que ocupan al menos el 2% del marco (su promedio exacto).
+  const paleta = [];
+  cuentas.forEach((e) => {
+    if (e.n >= total * 0.02) paleta.push([e.r / e.n, e.g / e.n, e.b / e.n]);
+  });
+  if (!paleta.length) return null;
+  // Un píxel "se parece al fondo" si está cerca de algún color de la paleta.
+  const TOL = 34;
+  const parece = (p) => {
+    const i = p * 4;
+    if (d[i + 3] < 128) return true;
+    for (let k = 0; k < paleta.length; k++) {
+      const c = paleta[k];
+      if (Math.abs(d[i] - c[0]) <= TOL && Math.abs(d[i + 1] - c[1]) <= TOL && Math.abs(d[i + 2] - c[2]) <= TOL) return true;
+    }
+    return false;
+  };
+  // Expansión desde el borde (relleno por inundación, sin recursión).
+  const fondo = new Uint8Array(w * h);
+  const cola = new Int32Array(w * h);
+  let ini = 0, fin = 0;
+  const meter = (p) => {
+    if (fondo[p] || !parece(p)) return;
+    fondo[p] = 1;
+    cola[fin++] = p;
+  };
+  for (let x = 0; x < w; x++) { meter(x); meter((h - 1) * w + x); }
+  for (let y = 0; y < h; y++) { meter(y * w); meter(y * w + w - 1); }
+  while (ini < fin) {
+    const p = cola[ini++];
+    const x = p % w;
+    if (x > 0) meter(p - 1);
+    if (x < w - 1) meter(p + 1);
+    if (p >= w) meter(p - w);
+    if (p < w * (h - 1)) meter(p + w);
+  }
+  // Si casi no se encontró fondo, o se "comió" casi toda la imagen, no sirve.
+  if (fin < w * h * 0.03 || fin > w * h * 0.97) return null;
+  return fondo;
+}
+
 // Busca un círculo en los datos de una imagen (RGBA). Devuelve {cx, cy, r}
 // o null si la figura no es redonda. No toca el DOM (se puede probar aparte).
+// Hace hasta 2 intentos:
+//   1) Fondo blanco/crema/gris claro (lo de siempre, rápido).
+//   2) Si falla, aprende el color del fondo desde los bordes (fondos celestes, degradados...).
 function detectarCirculoColeccionable(d, w, h) {
+  const primero = detectarCirculoConFondo(d, w, h, (i) => esPixelFondo(d, i));
+  if (primero) return primero;
+  const mascara = calcularMascaraFondoPorBordes(d, w, h);
+  if (!mascara) return null;
+  return detectarCirculoConFondo(d, w, h, (i) => mascara[i >> 2] === 1);
+}
+
+// Núcleo del detector: igual que antes, pero recibe una función esFondo(i) que dice
+// si el píxel que empieza en la posición i (de la lista RGBA) es fondo o no.
+function detectarCirculoConFondo(d, w, h, esFondo) {
   // 1) Centro aproximado: el promedio de todo lo que NO es fondo.
   let sx = 0, sy = 0, n = 0;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      if (!esPixelFondo(d, (y * w + x) * 4)) { sx += x; sy += y; n++; }
+      if (!esFondo((y * w + x) * 4)) { sx += x; sy += y; n++; }
     }
   }
   if (n < w * h * 0.03) return null;
@@ -43,7 +124,7 @@ function detectarCirculoColeccionable(d, w, h) {
     let seguidos = 0;
     for (let r = rMax; r >= 0; r--) {
       const x = Math.round(c0x + dx * r), y = Math.round(c0y + dy * r);
-      if (!esPixelFondo(d, (y * w + x) * 4)) {
+      if (!esFondo((y * w + x) * 4)) {
         seguidos++;
         if (seguidos >= 3) { puntos.push([c0x + dx * (r + 2), c0y + dy * (r + 2)]); break; }
       } else {

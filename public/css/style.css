@@ -424,6 +424,88 @@ header #link-mi-coleccion {
   */
 }
 
+header #foto-boton-perfil {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  object-fit: cover;
+  border: 2px solid rgba(47, 110, 85, 0.7);
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(59, 46, 32, 0.28);
+}
+
+/* ---- Cabecera compartida del muro de perfil ---- */
+.perfil-header .perfil-titulo-bloque {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+.perfil-header .nombre-perfil-header {
+  margin: 4px 0 0;
+  color: var(--color-blanco);
+  font-family: var(--fuente-titulos);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  /* Mismo relieve WordArt del título principal, en una escala menor. */
+  text-shadow:
+    -1px -1px 0 #3B2E20, 1px -1px 0 #3B2E20,
+    -1px 1px 0 #3B2E20, 1px 1px 0 #3B2E20,
+    0 3px 0 #A2321F, 0 5px 5px rgba(0, 0, 0, 0.32);
+}
+
+/* En el perfil, "Volver al inicio" vive en la barra principal, a la
+   izquierda de las acciones, en vez de quedar perdido dentro del contenido. */
+.perfil-header { position: relative; }
+.perfil-header .link-volver-header {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 6px 14px;
+  border: 2px solid var(--color-rojo-cereza);
+  border-radius: 999px;
+  background: var(--color-papel);
+  color: var(--color-texto-suave);
+  font-weight: 700;
+  text-decoration: none;
+  transform: translateY(-50%);
+}
+.perfil-header .link-volver-header:hover,
+.perfil-header .link-volver-header:focus-visible {
+  color: var(--color-rojo-cereza);
+  filter: brightness(1.04);
+}
+
+@media (min-width: 1000px) {
+  /* En escritorio se centra respecto de toda la ventana, no solo de la columna izquierda. */
+  .perfil-header .perfil-titulo-bloque {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
+    width: max-content;
+    text-align: center;
+    transform: translate(-50%, -50%);
+  }
+
+}
+
+@media (max-width: 699px) {
+  .perfil-header .perfil-titulo-bloque {
+    position: relative;
+    z-index: 1;
+    padding: 20px 16px 24px;
+    text-align: center;
+  }
+  .perfil-header .perfil-titulo-bloque h1 { padding: 0; }
+}
+
 header #link-mi-coleccion:hover {
   transform: scale(1.04);
   /*
@@ -880,6 +962,7 @@ main > a:hover {
   border-radius: 0;
   overflow: hidden;
   background-color: transparent;
+  isolation: isolate;
   outline: none;
   cursor: pointer;
   padding: 8px;
@@ -887,6 +970,43 @@ main > a:hover {
   align-items: center;
   justify-content: center;
   transition: transform 0.16s ease, filter 0.16s ease;
+}
+
+.vista-producto-comprable.producto-proximamente {
+  cursor: default;
+}
+
+/* El blanco pertenece a algunas fotos subidas, no al contenedor. Al mezclar
+   toda la tarjeta, el envase conserva sus colores y el fondo se integra tanto
+   en reposo como al pasar el mouse. */
+.vista-producto-comprable .imagen-opcion {
+  mix-blend-mode: multiply;
+  background: transparent !important;
+}
+
+.vista-producto-comprable:hover .imagen-opcion,
+.vista-producto-comprable:focus-within .imagen-opcion {
+  mix-blend-mode: multiply;
+}
+
+.vista-producto-comprable.producto-proximamente::after,
+.detalle-producto-imagen.producto-proximamente::after {
+  content: "PRÓXIMAMENTE";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  padding: 4px 10px;
+  border-top: 3px solid var(--color-rojo-cereza);
+  border-bottom: 3px solid var(--color-rojo-cereza);
+  color: var(--color-rojo-cereza);
+  font-family: var(--fuente-titulos);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-shadow: 1px 1px 0 var(--color-blanco);
+  transform: translate(-50%, -50%) rotate(-14deg);
+  pointer-events: none;
 }
 
 .vista-producto-comprable:focus-visible {
@@ -916,6 +1036,9 @@ main > a:hover {
   height: 100%;
   display: block;
   object-fit: contain;
+  /* Las fotos de envases con fondo blanco se integran visualmente al fondo
+     estampado, como si el blanco fuera transparente. */
+  mix-blend-mode: multiply;
   filter: drop-shadow(0 10px 14px rgba(59, 46, 32, 0.2));
 }
 
@@ -1009,6 +1132,19 @@ main > a:hover {
   transform: scale(0.96);
 }
 
+.boton-comprar:disabled,
+.boton-comprar.boton-compra-proximamente {
+  background: #8b8b8b;
+  color: #eeeeee;
+  cursor: not-allowed;
+  filter: none;
+  opacity: 0.9;
+}
+
+.boton-comprar:disabled:hover {
+  filter: none;
+}
+
 /* -----------------------------------------------------------------
    9.4) LINK "ADMINISTRAR PRODUCTOS" (index.html)
    -----------------------------------------------------------------
@@ -1058,6 +1194,213 @@ main > a:hover {
   font-size: 1rem;
   margin: 16px 0 8px;
   color: var(--color-texto);
+}
+
+.form-codigo-regalo-root {
+  display: grid;
+  gap: 8px;
+}
+
+.panel-codigos-regalo-compacto {
+  position: fixed;
+  top: 78px;
+  right: 18px;
+  z-index: 20;
+  width: min(360px, calc(100vw - 36px));
+  margin: 0;
+  padding: 10px 12px;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  box-shadow: 0 8px 22px rgba(59, 46, 32, 0.22);
+}
+
+.cabecera-codigos-regalo-root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cabecera-codigos-regalo-root h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.btn-toggle-codigos-regalo-root {
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-verde-menta-oscuro);
+  border-radius: 999px;
+  background: var(--color-verde-menta);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-toggle-codigos-regalo-root:hover,
+.btn-toggle-codigos-regalo-root:focus-visible {
+  background: var(--color-verde-menta-oscuro);
+  color: var(--color-blanco);
+}
+
+.panel-musica-root {
+  border: 2px dashed var(--color-verde-menta-oscuro);
+}
+
+.cabecera-musica-root {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cabecera-musica-root h2 { margin-bottom: 4px; }
+.cabecera-musica-root .texto-ayuda { margin: 0; }
+
+.etiqueta-musica-root {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--color-verde-menta);
+  color: var(--color-texto);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.form-musica-root {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.form-musica-root label { font-weight: 700; }
+.form-musica-root input[type="text"] {
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background: var(--color-blanco);
+  font: inherit;
+}
+
+.tarjeta-musica-root {
+  display: grid;
+  gap: 7px;
+  margin: 8px 0;
+  padding: 10px;
+  border: 1px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background: rgba(255, 253, 247, 0.72);
+}
+
+.tarjeta-musica-root audio { width: 100%; }
+.musica-activa { color: var(--color-verde-menta-oscuro); font-weight: 800; }
+.musica-inactiva { color: var(--color-texto-suave); font-weight: 700; }
+.acciones-musica-root { display: flex; flex-wrap: wrap; gap: 7px; }
+.acciones-musica-root button { min-height: 34px; padding: 5px 10px; }
+.boton-quitar-musica { color: var(--color-rojo-cereza); }
+
+.control-musica-sitio {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: min(230px, calc(100vw - 28px));
+  padding: 5px 9px 5px 5px;
+  border: 1px solid rgba(79, 163, 130, 0.65);
+  border-radius: 999px;
+  background: rgba(255, 253, 247, 0.86);
+  box-shadow: 0 3px 10px rgba(59, 46, 32, 0.18);
+  color: var(--color-texto-suave);
+  font-size: 0.75rem;
+  backdrop-filter: blur(4px);
+}
+
+.boton-musica-sitio {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--color-verde-menta-oscuro);
+  border-radius: 50%;
+  background: var(--color-verde-menta);
+  color: var(--color-texto);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.control-musica-sitio span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panel-codigos-regalo-contenido {
+  max-height: min(72vh, 620px);
+  overflow-y: auto;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(200, 138, 34, 0.35);
+}
+
+.form-codigo-regalo-root label {
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.form-codigo-regalo-root input,
+.form-codigo-regalo-root select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--alto-tactil);
+  padding: 8px 10px;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background: var(--color-blanco);
+  color: var(--color-texto);
+  font: inherit;
+}
+
+.fila-codigo-regalo {
+  display: flex;
+  gap: 8px;
+}
+
+.fila-codigo-regalo > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.tarjeta-codigo-regalo-root {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+  padding: 10px;
+  border: 1px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background: color-mix(in srgb, var(--color-blanco) 72%, transparent);
+}
+
+.tarjeta-codigo-regalo-root strong {
+  color: var(--color-rojo-cereza);
+  letter-spacing: 0.04em;
+}
+
+.codigo-regalo-activo,
+.codigo-regalo-inactivo {
+  font-weight: 700;
+}
+
+.codigo-regalo-activo { color: var(--color-verde-menta-oscuro); }
+.codigo-regalo-inactivo { color: var(--color-rojo-cereza); }
+
+.boton-codigo-regalo-desactivar {
+  justify-self: start;
+  min-height: 34px;
+  padding: 6px 10px;
 }
 
 #form-nuevo-producto label {
@@ -1145,6 +1488,10 @@ main > a:hover {
   flex: 2 1 160px;
 }
 
+.fila-opcion .input-subtitulo-opcion {
+  flex: 2 1 180px;
+}
+
 .fila-opcion .input-archivo-opcion {
   flex: 1 1 180px;
 }
@@ -1164,6 +1511,17 @@ main > a:hover {
 
 .fila-opcion .input-precio-opcion {
   flex: 1 1 100px;
+}
+
+.subtitulo-opcion {
+  max-width: 190px;
+  margin: -4px 0 0;
+  color: var(--color-texto);
+  font-family: var(--fuente-titulos);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
 }
 
 .fila-opcion .select-tipo-opcion {
@@ -1204,7 +1562,7 @@ main > a:hover {
 }
 
 .fila-premio .input-nombre-premio {
-  flex: 2 1 190px;
+  flex: 1 1 100%;
 }
 
 .fila-premio .input-archivo-premio {
@@ -1215,6 +1573,7 @@ main > a:hover {
   flex: 1 1 100%;
 }
 
+.fila-frontal-premio,
 .fila-trasera-premio {
   display: flex;
   flex: 1 1 100%;
@@ -1707,7 +2066,7 @@ footer {
 
 @media (min-width: 700px) {
   .lista-muro {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
@@ -1958,7 +2317,7 @@ footer {
 
    Ingredientes de la época:
    - Botones "gel" brillantes (degradé con corte duro al medio)
-   - Tarjeta de saldo como ventana de computador ("Mi monedero.exe")
+   - Tarjeta de saldo como panel colorido con degradado Frutiger Aero
    - Fondo de puntitos, bordes biselados y sombras "3D" duras
    - Tipografía Verdana/Trebuchet en el texto
    - Contador de monedas con pantalla LCD verde
@@ -2090,53 +2449,39 @@ header #link-mi-coleccion,
   background-image: linear-gradient(to bottom, #FFE9A6 0%, #F3C355 50%, #DD9C22 52%, #EDB43F 100%);
 }
 
-/* ---- Tarjeta de saldo = ventana de computador ---- */
+/* ---- Tarjeta de saldo: panel colorido ---- */
 .tarjeta-saldo {
   position: relative;
-  padding-top: 0;
-  border: 2px solid #8A5E10;
-  border-radius: 10px 10px 8px 8px;
-  background-image: linear-gradient(to bottom, #FFFFFF 0%, var(--color-papel) 60%);
-  box-shadow: var(--sombra-tarjeta);
-  overflow: hidden;
+  padding-top: 16px;
+  border: 0;
+  border-radius: var(--radio-borde);
+  isolation: isolate;
+  background: transparent;
+  box-shadow: none;
 }
 
 .tarjeta-saldo::before {
-  content: "\1F4B0  Mi monedero.exe";
-  align-self: stretch;
-  margin: 0 -16px 6px;
-  padding: 7px 96px 7px 12px;
-  color: #FFFFFF;
-  font-family: var(--fuente-texto);
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
-  background-image: linear-gradient(to bottom, #8FD9BB 0%, #4FA382 48%, #3A8A6B 52%, #4FA382 100%);
-  border-bottom: 2px solid #2F6E55;
-}
-
-/* Botoncitos de la ventana: minimizar, maximizar, cerrar (decorativos) */
-.tarjeta-saldo::after {
-  content: "\2013\00a0\00a0\25A1\00a0\00a0\2715";
+  content: "";
   position: absolute;
-  top: 4px;
-  right: 8px;
-  padding: 0 8px;
-  color: var(--color-texto);
-  font-family: var(--fuente-texto);
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1.5;
-  letter-spacing: 2px;
-  white-space: pre;
-  background-image: linear-gradient(to bottom, #FFFFFF, #E5E5E5);
-  border: 1px solid #2F6E55;
-  border-radius: 5px;
-  pointer-events: none;
+  inset: 0;
+  z-index: 0;
+  /* Solo queda una mancha de color suave, sin relleno rectangular. */
+  background-color: transparent;
+  background-image:
+    radial-gradient(ellipse at 52% 58%, rgba(255, 218, 124, 0.78) 0%, rgba(255, 190, 116, 0.64) 22%, rgba(128, 214, 183, 0.48) 48%, rgba(117, 203, 224, 0.2) 72%, transparent 100%),
+    radial-gradient(ellipse at 18% 18%, rgba(255, 255, 255, 0.34) 0%, transparent 28%),
+    radial-gradient(ellipse at 50% 0%, rgba(139, 225, 240, 0.42) 0%, transparent 72%),
+    radial-gradient(ellipse at 50% 100%, rgba(183, 228, 155, 0.4) 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 34%, rgba(0, 0, 0, 0.72) 68%, transparent 100%);
+  mask-image: radial-gradient(ellipse at center, #000 34%, rgba(0, 0, 0, 0.72) 68%, transparent 100%);
+  /* Capa translúcida: suaviza solo los colores del fondo. */
+  opacity: 0.72;
 }
 
 .tarjeta-saldo > * {
   margin-left: 0;
+  position: relative;
+  z-index: 1;
 }
 
 /* ---- Contador de monedas: pantalla LCD ---- */
@@ -2222,6 +2567,43 @@ main h1,
   background-image: linear-gradient(to bottom, #FFFFFF 0%, var(--color-papel) 40%);
   border: 3px solid #8A5E10;
   box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 6px var(--color-mostaza), 0 16px 30px rgba(59, 46, 32, 0.45);
+}
+
+.modal-premio-celebracion .modal-premio-contenido {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(135deg, #FFFDF2 0%, #FFE6A6 48%, #FFF8E7 100%);
+  border-color: #C6402E;
+  box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 6px #E6A93B, 0 18px 34px rgba(198, 64, 46, 0.42);
+}
+
+.modal-premio-celebracion .modal-premio-contenido::before,
+.modal-premio-celebracion .modal-premio-contenido::after {
+  position: absolute;
+  top: 12px;
+  color: #E6A93B;
+  font-size: 2rem;
+  text-shadow: 1px 1px 0 #FFFFFF;
+  animation: destello-premio 1.6s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.modal-premio-celebracion .modal-premio-contenido::before { content: "★ ✦"; left: 18px; }
+.modal-premio-celebracion .modal-premio-contenido::after { content: "✦ ★"; right: 18px; animation-delay: 0.35s; }
+
+.modal-premio-celebracion h2 {
+  color: #C6402E;
+  font-size: 1.7rem;
+}
+
+.modal-premio-celebracion > .modal-premio-contenido > p {
+  color: #8A5E10;
+  font-weight: 800;
+}
+
+@keyframes destello-premio {
+  from { transform: scale(0.9) rotate(-8deg); opacity: 0.65; }
+  to { transform: scale(1.12) rotate(8deg); opacity: 1; }
 }
 
 .modal-premio,
@@ -2502,6 +2884,14 @@ header #link-intercambios {
 
 header #link-intercambios.oculto { display: none; }
 header #link-intercambios:hover { filter: brightness(1.08); }
+header #link-intercambios.funcion-deshabilitada {
+  background: linear-gradient(to bottom, #bdbdbd 0%, #8f8f8f 52%, #777777 100%);
+  border-color: #686868;
+  color: #f4f4f4;
+  cursor: not-allowed;
+  filter: grayscale(0.25);
+  pointer-events: none;
+}
 header #link-intercambios:not(.oculto) ~ #monedas-usuario { grid-row: 3; }
 
 @media (min-width: 1000px) {
@@ -2514,6 +2904,18 @@ header #link-intercambios:not(.oculto) ~ #monedas-usuario { grid-row: 3; }
 
 /* ---- Página de intercambios ---- */
 .bloque-intercambio { margin: 22px 0; }
+
+body.mercado-deshabilitado main > .bloque-intercambio { display: none; }
+body.mercado-deshabilitado #estado-intercambios {
+  margin: 32px auto;
+  padding: 18px;
+  border: 2px solid #999;
+  border-radius: var(--radio-borde);
+  background: rgba(245, 245, 245, 0.9);
+  color: #666;
+  font-weight: 700;
+  text-align: center;
+}
 .bloque-intercambio h2 { margin: 0 0 8px; font-family: var(--fuente-titulos); }
 .fila-publicar { display: grid; gap: 10px; }
 .fila-publicar select, .fila-publicar input, .acciones-intercambio select {
@@ -2735,6 +3137,44 @@ header:has(#link-root:not(.oculto)) { padding-top: 42px; }
 .herramientas-root a span { display: block; font-weight: 400; font-size: 0.85rem; color: var(--color-texto-suave); }
 .herramientas-root a:hover { border-color: var(--color-rojo-cereza); }
 
+.panel-fotos-perfil-root { margin-top: 16px; }
+.cabecera-fotos-perfil-root {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cabecera-fotos-perfil-root h2 { margin: 0; color: var(--color-rojo-cereza); }
+.cabecera-fotos-perfil-root .texto-ayuda { margin: 4px 0 0; }
+.galeria-fotos-perfil-root {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.tarjeta-foto-perfil-root {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 7px;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background: var(--color-blanco);
+}
+.tarjeta-foto-perfil-root img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 50%;
+  background: var(--color-papel);
+}
+.tarjeta-foto-perfil-root strong,
+.tarjeta-foto-perfil-root span {
+  overflow-wrap: anywhere;
+  font-size: .78rem;
+}
+.tarjeta-foto-perfil-root span { color: var(--color-texto-suave); }
+
 .assets-detalles { margin-bottom: 10px; }
 .assets-detalles > summary { cursor: pointer; font-weight: 700; padding: 8px 0; }
 .assets-detalles > .assets-grid { margin-top: 6px; }
@@ -2821,6 +3261,21 @@ header:has(#link-root:not(.oculto)) { padding-top: 42px; }
     box-shadow: none;
   }
 
+  /* En celular queda en la primera columna, a la misma altura que
+     "Intercambios". Las tres acciones caben sin encimarse. */
+  header .barra-header .link-volver-header {
+    position: static;
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+    min-width: 0;
+    margin: 0 4px 0 0;
+    padding: 6px 7px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    transform: none;
+  }
+
   /* Si no hay nada visible (nadie logeado), se oculta la zona entera
      para que no quede un espacio vacío. */
   header .barra-header:not(:has(> a:not(.oculto), > p:not(:empty))) {
@@ -2859,6 +3314,26 @@ header:has(#link-root:not(.oculto)) { padding-top: 42px; }
     justify-self: center;
     margin: 0;
     white-space: nowrap;
+  }
+
+  /* Solo el perfil agrega el enlace "Volver" a esta barra. */
+  .perfil-header .barra-header {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .perfil-header .barra-header #link-intercambios {
+    grid-column: 2;
+    justify-self: center;
+    margin: 0;
+  }
+  .perfil-header .barra-header #link-mi-coleccion {
+    grid-column: 3;
+    justify-self: start;
+    margin: 0;
+  }
+  .perfil-header .barra-header:has(#link-intercambios.oculto) #link-mi-coleccion {
+    grid-column: 2 / 4;
+    justify-self: center;
+    margin: 0;
   }
 }
 
@@ -2912,6 +3387,67 @@ header:has(#link-root:not(.oculto)) { padding-top: 42px; }
   margin: 0;
 }
 
+.selector-opciones-foto {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  background: rgba(59, 46, 32, 0.58);
+}
+
+.contenido-opciones-foto {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 390px);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 16px;
+  border: 3px solid var(--color-mostaza);
+  border-radius: var(--radio-borde);
+  background: var(--color-papel);
+  box-shadow: var(--sombra-tarjeta);
+}
+
+.contenido-opciones-foto .texto-ayuda {
+  text-align: center;
+}
+
+.botones-opciones-foto {
+  display: grid;
+  gap: 8px;
+}
+
+.rejilla-fotos-perfil {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.opcion-foto-perfil {
+  aspect-ratio: 1;
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid var(--color-mostaza);
+  border-radius: 50%;
+  background: var(--color-blanco);
+  cursor: pointer;
+}
+
+.opcion-foto-perfil:hover,
+.opcion-foto-perfil:focus-visible {
+  border-color: var(--color-verde-menta-oscuro);
+  box-shadow: 0 0 0 3px rgba(79, 163, 130, 0.22);
+}
+
+.opcion-foto-perfil img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .boton-codigo-referido {
   justify-content: space-between !important;
   gap: 12px;
@@ -2956,6 +3492,83 @@ header:has(#link-root:not(.oculto)) { padding-top: 42px; }
 .fila-referido { display: flex; gap: 8px; width: 100%; }
 .fila-referido input { flex: 1; min-width: 0; }
 .fila-referido button { flex: 0 0 auto; padding: 8px 14px; }
+.fila-referido .boton-secundario {
+  min-height: 44px;
+  border-color: var(--color-verde-menta-oscuro);
+  background: linear-gradient(to bottom, #FFFDF7 0%, #E5F5EA 100%);
+  color: var(--color-verde-menta-oscuro);
+  font-weight: 700;
+}
+.fila-referido .boton-secundario:hover,
+.fila-referido .boton-secundario:focus-visible {
+  background: var(--color-verde-menta-oscuro);
+  color: var(--color-blanco);
+}
+
+.seccion-ranking {
+  width: min(100%, 560px);
+  margin: 16px auto 12px;
+  padding: 14px;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde);
+  background: rgba(255, 253, 247, 0.82);
+  box-shadow: 0 4px 12px rgba(59, 46, 32, 0.12);
+}
+
+.cabecera-ranking {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cabecera-ranking h2 {
+  margin: 0;
+  color: var(--color-rojo-cereza);
+  font-family: var(--fuente-titulos);
+  font-size: 1.1rem;
+}
+
+.cabecera-ranking > span { font-size: 1.35rem; }
+.etiqueta-busqueda-ranking { display: block; margin-top: 8px; font-weight: 700; }
+
+#input-buscar-ranking {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  margin-top: 5px;
+  padding: 8px 10px;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background: var(--color-blanco);
+  color: var(--color-texto);
+  font: inherit;
+}
+
+.lista-ranking {
+  display: grid;
+  gap: 7px;
+  max-height: 280px;
+  overflow-y: auto;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fila-ranking {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid rgba(200, 138, 34, 0.5);
+  border-radius: var(--radio-borde-chico);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.puesto-ranking { font-size: 1.25rem; text-align: center; }
+.nombre-ranking { color: var(--color-rojo-cereza); font-weight: 800; overflow-wrap: anywhere; }
+.cantidad-ranking { color: var(--color-texto-suave); font-size: 0.85rem; white-space: nowrap; }
 
 /* ---- Selector de imagen de portada (dentro de "Mi cuenta") ---- */
 .selector-portada .texto-ayuda {
@@ -3176,6 +3789,14 @@ header #link-zona-juego {
 }
 header #link-zona-juego.oculto { display: none; }
 header #link-zona-juego:hover { filter: brightness(1.08); }
+header #link-zona-juego.funcion-deshabilitada {
+  background: linear-gradient(to bottom, #bdbdbd 0%, #8f8f8f 52%, #777777 100%);
+  border-color: #686868;
+  color: #f4f4f4;
+  cursor: not-allowed;
+  filter: grayscale(0.25);
+  pointer-events: none;
+}
 header #link-zona-juego:focus-visible { outline: 3px solid var(--color-texto); outline-offset: 2px; }
 
 /* Tablet (700px a 999px): "Intercambios" en fila 2, "Zona Juego" en fila 3, dinero en fila 4 */
@@ -3381,6 +4002,9 @@ header #link-zona-juego:not(.oculto) ~ #monedas-usuario { grid-row: 4; }
   font: inherit;
   cursor: pointer;
 }
+/* Casilla vacía sugerida (modo edición apagado): translúcida y sin interacción */
+.lista-exhibidor li.hueco-sugerido { opacity: 0.4; pointer-events: none; transition: opacity 0.2s ease; }
+.lista-exhibidor li.hueco-sugerido .boton-hueco-exhibidor { cursor: default; }
 .boton-hueco-exhibidor span { font-size: 2rem; line-height: 1; font-weight: 800; color: var(--color-mostaza-oscuro); }
 .boton-hueco-exhibidor small { font-size: 0.78rem; font-weight: 600; }
 .boton-hueco-exhibidor:hover span,
@@ -3534,6 +4158,7 @@ header #link-zona-juego:not(.oculto) ~ #monedas-usuario { grid-row: 4; }
 }
 
 .detalle-producto-imagen {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3743,3 +4368,695 @@ header #link-zona-juego:not(.oculto) ~ #monedas-usuario { grid-row: 4; }
 @media (prefers-reduced-motion: reduce) {
   .nota-referido { animation: none; }
 }
+
+/* =================================================================
+   19) ENCABEZADO EN COMPUTADOR (1000px o más): BOTONES ORDENADOS
+   =================================================================
+   Los botones y el dinero forman una cuadrícula de 2 columnas x 2 filas,
+   alineada a la derecha del encabezado:
+
+        [ Intercambios ]   [ Mi perfil ]
+        [ Zona Juego   ]   [ Dinero    ]
+
+   - "Mi perfil" queda arriba y la barra de dinero justo debajo de él.
+   - Las dos columnas miden lo mismo (la del dinero manda), y todos los
+     botones se estiran al ancho de su columna: así se ven simétricos.
+   - El título queda centrado en el espacio que sobra.
+   Esta sección va al final del archivo a propósito: pisa las reglas
+   anteriores del encabezado (por eso usa !important en la ubicación).
+   Celular y tablet (menos de 1000px) NO cambian.
+------------------------------------------------------------------ */
+@media (min-width: 1000px) {
+
+  header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 24px;
+    align-items: center;
+  }
+
+  /* El título ocupa la columna de la izquierda, centrado. */
+  header h1 {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    justify-self: center;
+  }
+
+  /* El envoltorio ya no se "disuelve": ahora es la cuadrícula 2x2. */
+  header .barra-header {
+    grid-column: 2;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);   /* dos columnas del mismo ancho */
+    gap: 12px 14px;                          /* filas / columnas */
+    align-items: center;
+    justify-items: stretch;                  /* cada botón llena su columna */
+  }
+
+  /* Si no hay nada visible (nadie logeado) no se reserva espacio. */
+  header .barra-header:not(:has(> a:not(.oculto), > p:not(:empty))) {
+    display: none;
+  }
+
+  /* Estilo común de los tres botones: mismo alto, misma letra, centrados. */
+  header .barra-header #link-intercambios,
+  header .barra-header #link-zona-juego,
+  header .barra-header #link-mi-coleccion {
+    position: static !important;
+    transform: none;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0 !important;
+    padding: 8px 18px;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  header .barra-header .oculto,
+  header .barra-header #link-intercambios.oculto,
+  header .barra-header #link-zona-juego.oculto,
+  header .barra-header #link-mi-coleccion.oculto {
+    display: none !important;
+  }
+
+  /* Ubicación en la cuadrícula. */
+  header .barra-header #link-intercambios  { grid-column: 1 !important; grid-row: 1 !important; }
+  header .barra-header #link-zona-juego    { grid-column: 1 !important; grid-row: 2 !important; }
+  header .barra-header #link-mi-coleccion  { grid-column: 2 !important; grid-row: 1 !important; align-self: center !important; }
+
+  /* La barra de dinero: debajo de "Mi perfil", del mismo ancho. */
+  header .barra-header #monedas-usuario,
+  header .barra-header #monedas-usuario:not(:empty) {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    align-self: center !important;
+    justify-self: stretch !important;
+    box-sizing: border-box;
+    margin: 0 !important;
+    padding: 6px 14px;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 0.85rem;
+  }
+
+  header .barra-header #link-mi-coleccion:hover,
+  header .barra-header #link-intercambios:hover,
+  header .barra-header #link-zona-juego:hover {
+    transform: scale(1.03);
+  }
+}
+
+/* Pantallas bien anchas (1300px o más): el título se centra respecto
+   de TODA la página (columnas laterales iguales), no solo del espacio
+   que dejan los botones. */
+@media (min-width: 1300px) {
+  header {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+  header h1 {
+    grid-column: 2 !important;
+  }
+  header .barra-header {
+    grid-column: 3;
+    justify-self: end;
+  }
+}
+
+/* =================================================================
+   20) EXHIBIDOR: BOTONES DENTRO DE LA TARJETA Y FORMAS DE EXHIBIR
+   =================================================================
+   A) Los botones "Cambiar", "Modificar" y "Quitar" ahora van apilados,
+      cada uno a todo el ancho de la tarjeta, así nunca se salen de ella
+      aunque la pantalla sea angosta (celular).
+   B) Escenarios con efectos para exhibir el tazo (botón "Modificar"):
+      aura, Super Saiyajin, truenos, trono y brillo.
+------------------------------------------------------------------ */
+
+/* ---- A) Botones del exhibidor ---- */
+
+/* La tarjeta no deja que nada se salga de ella. */
+.lista-exhibidor li {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Los botones son cuadrados con ícono y van uno al lado del otro, pegados al
+   fondo de la tarjeta (Cambiar, Modificar, Quitar). */
+.acciones-casilla-exhibidor {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  margin-top: auto;
+  box-sizing: border-box;
+}
+
+/* Cada botón es un cuadrado que comparte el ancho de la tarjeta. */
+.acciones-casilla-exhibidor .boton-mini-exhibidor {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 44px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0;
+  overflow: hidden;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+/* "Modificar": color dorado para distinguirlo de Cambiar (verde) y Quitar (rojo). */
+.boton-mini-exhibidor.boton-mini-modificar {
+  border-color: var(--color-mostaza-oscuro);
+  color: #8A5E10;
+}
+
+/* ---- B) Escenarios con efectos ---- */
+
+/* Caja cuadrada: todo lo que se dibuje adentro queda recortado (overflow hidden),
+   por eso ningún efecto se sale de la tarjeta. */
+.escenario-tazo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-blanco);
+}
+
+/* El tazo: centrado, redondo y por encima de los efectos de atrás.
+   (Más específico que ".lista-muro li img" para ganarle a su fondo y su forma.) */
+.escenario-tazo > img,
+.lista-muro li .escenario-tazo > img {
+  position: absolute;
+  inset: 9%;
+  z-index: 2;
+  display: block;
+  width: 82%;
+  height: 82%;
+  aspect-ratio: auto;
+  object-fit: contain;
+  border-radius: 50%;
+  background: transparent;
+}
+
+/* Capas decorativas: no reciben clics (el clic llega al botón de la tarjeta). */
+.escenario-tazo .fx { position: absolute; pointer-events: none; }
+
+/* --- Aura --- */
+.escenario-aura { background: radial-gradient(circle at 50% 50%, #3d1f73 0%, #150a2e 75%); }
+.escenario-aura .fx-aura {
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(circle, rgba(140, 200, 255, 0) 38%, rgba(120, 180, 255, 0.9) 52%, rgba(160, 90, 255, 0.55) 64%, transparent 80%);
+  animation: exh-pulso 2.4s ease-in-out infinite;
+}
+.escenario-aura .fx-aura-anillo {
+  inset: 2%;
+  z-index: 1;
+  background: conic-gradient(from 0deg, transparent 0%, rgba(190, 225, 255, 0.95) 12%, transparent 40%, rgba(210, 160, 255, 0.85) 62%, transparent 85%);
+  -webkit-mask: radial-gradient(circle, transparent 60%, #000 62%, #000 70%, transparent 74%);
+  mask: radial-gradient(circle, transparent 60%, #000 62%, #000 70%, transparent 74%);
+  animation: exh-giro 5s linear infinite;
+}
+
+/* --- Super Saiyajin --- */
+.escenario-saiyajin { background: radial-gradient(circle at 50% 65%, #8a5300 0%, #2a1600 78%); }
+.escenario-saiyajin .fx-halo {
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(circle, rgba(255, 244, 130, 0.95) 32%, rgba(255, 200, 0, 0.6) 52%, transparent 74%);
+  filter: blur(2px);
+  animation: exh-pulso 0.9s ease-in-out infinite;
+}
+.escenario-saiyajin .fx-llama {
+  bottom: -6%;
+  z-index: 1;
+  width: 26%;
+  background: linear-gradient(to top, #ff7a00 0%, #ffc400 55%, rgba(255, 245, 150, 0) 100%);
+  clip-path: polygon(50% 0, 68% 30%, 100% 100%, 0 100%, 32% 30%);
+  transform-origin: 50% 100%;
+  animation: exh-llama 0.7s ease-in-out infinite alternate;
+}
+.escenario-saiyajin .l1 { left: -2%;  height: 62%; animation-delay: 0s; }
+.escenario-saiyajin .l2 { left: 18%;  height: 88%; animation-delay: 0.15s; }
+.escenario-saiyajin .l3 { left: 37%;  height: 100%; animation-delay: 0.3s; }
+.escenario-saiyajin .l4 { left: 56%;  height: 86%; animation-delay: 0.1s; }
+.escenario-saiyajin .l5 { left: 76%;  height: 60%; animation-delay: 0.25s; }
+.escenario-saiyajin .fx-ascua {
+  z-index: 3;
+  bottom: 8%;
+  width: 4%;
+  height: 4%;
+  border-radius: 50%;
+  background: #fff6a8;
+  box-shadow: 0 0 6px 2px rgba(255, 220, 60, 0.9);
+  animation: exh-subir 1.8s ease-in infinite;
+}
+.escenario-saiyajin .a1 { left: 22%; animation-delay: 0s; }
+.escenario-saiyajin .a2 { left: 50%; animation-delay: 0.6s; }
+.escenario-saiyajin .a3 { left: 76%; animation-delay: 1.2s; }
+
+/* --- Truenos --- */
+.escenario-truenos { background: linear-gradient(to bottom, #0b1030 0%, #1d2b69 100%); }
+.escenario-truenos .fx-anillo-electrico {
+  inset: 7%;
+  z-index: 1;
+  border-radius: 50%;
+  border: 3px solid rgba(160, 225, 255, 0.9);
+  box-shadow: 0 0 10px 3px rgba(120, 200, 255, 0.8), inset 0 0 10px 2px rgba(120, 200, 255, 0.6);
+  animation: exh-parpadeo 1.3s steps(1, end) infinite;
+}
+.escenario-truenos .fx-rayo {
+  z-index: 1;
+  width: 34%;
+  height: 52%;
+  fill: #f3fbff;
+  filter: drop-shadow(0 0 4px #59c8ff) drop-shadow(0 0 8px #2f8dff);
+  opacity: 0;
+  animation: exh-rayo 2.2s steps(1, end) infinite;
+}
+.escenario-truenos .r1 { left: -2%;  top: -2%; }
+.escenario-truenos .r2 { right: -2%; top: -2%; transform: scaleX(-1); animation-delay: 0.55s; }
+.escenario-truenos .r3 { left: -2%;  bottom: -2%; transform: scaleY(-1); animation-delay: 1.1s; }
+.escenario-truenos .r4 { right: -2%; bottom: -2%; transform: scale(-1, -1); animation-delay: 1.65s; }
+.escenario-truenos .fx-relampago {
+  inset: 0;
+  z-index: 3;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.55), rgba(180, 220, 255, 0) 70%);
+  opacity: 0;
+  animation: exh-flash 2.2s steps(1, end) infinite;
+}
+
+/* --- Trono --- */
+.escenario-trono { background: radial-gradient(circle at 50% 40%, #6b4a2a 0%, #2b1a0e 85%); }
+.escenario-trono .fx-trono { inset: 0; z-index: 1; width: 100%; height: 100%; }
+/* En el trono el tazo es más chico y queda sentado en el respaldo, y flota suave. */
+.escenario-trono > img,
+.lista-muro li .escenario-trono > img {
+  inset: auto;
+  top: 27%;
+  left: 24%;
+  width: 52%;
+  height: 52%;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
+  animation: exh-flotar 3s ease-in-out infinite;
+}
+
+/* --- Brillo --- */
+.escenario-brillo { background: linear-gradient(135deg, #2a2438 0%, #4d4270 100%); }
+.escenario-brillo .fx-barrido-circulo {
+  inset: 9%;
+  z-index: 3;
+  overflow: hidden;
+  border-radius: 50%;
+}
+.escenario-brillo .fx-barrido {
+  position: absolute;
+  top: -10%;
+  left: -70%;
+  width: 60%;
+  height: 120%;
+  background: linear-gradient(105deg, transparent 0%, rgba(255, 255, 255, 0.85) 50%, transparent 100%);
+  animation: exh-barrido 2.8s ease-in-out infinite;
+}
+.escenario-brillo .fx-chispa {
+  z-index: 4;
+  width: 16%;
+  height: 16%;
+  background: #ffffff;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  filter: drop-shadow(0 0 3px #ffffff);
+  opacity: 0;
+  animation: exh-titilar 2.4s ease-in-out infinite;
+}
+.escenario-brillo .c1 { left: 8%;  top: 12%; }
+.escenario-brillo .c2 { right: 8%; top: 22%; width: 11%; height: 11%; animation-delay: 0.7s; }
+.escenario-brillo .c3 { left: 14%; bottom: 10%; width: 12%; height: 12%; animation-delay: 1.3s; }
+.escenario-brillo .c4 { right: 12%; bottom: 14%; animation-delay: 1.9s; }
+
+/* --- Animaciones --- */
+@keyframes exh-pulso    { 0%, 100% { transform: scale(0.94); opacity: 0.75; } 50% { transform: scale(1.06); opacity: 1; } }
+@keyframes exh-giro     { to { transform: rotate(360deg); } }
+@keyframes exh-llama    { from { transform: scaleY(0.88) skewX(-4deg); opacity: 0.85; } to { transform: scaleY(1.08) skewX(4deg); opacity: 1; } }
+@keyframes exh-subir    { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-420%); opacity: 0; } }
+@keyframes exh-rayo     { 0%, 100% { opacity: 0; } 4%, 12% { opacity: 1; } 8% { opacity: 0.2; } 16% { opacity: 0; } }
+@keyframes exh-flash    { 0%, 100% { opacity: 0; } 4% { opacity: 1; } 8% { opacity: 0; } 12% { opacity: 0.6; } 16% { opacity: 0; } }
+@keyframes exh-parpadeo { 0%, 100% { opacity: 1; } 45% { opacity: 0.45; } 50% { opacity: 1; } 80% { opacity: 0.6; } }
+@keyframes exh-flotar   { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4%); } }
+@keyframes exh-barrido  { 0% { left: -70%; } 55%, 100% { left: 130%; } }
+@keyframes exh-titilar  { 0%, 100% { opacity: 0; transform: scale(0.4); } 50% { opacity: 1; transform: scale(1); } }
+
+/* Quien prefiere menos movimiento ve los escenarios quietos. */
+@media (prefers-reduced-motion: reduce) {
+  .escenario-tazo *,
+  .escenario-tazo > img { animation: none !important; }
+  .escenario-brillo .fx-chispa { opacity: 1; }
+  .escenario-truenos .fx-rayo { opacity: 0.9; }
+}
+
+/* ---- Ventana "Modificar" ---- */
+.vista-previa-estilo {
+  width: min(210px, 56vw);
+  margin: 10px auto 12px;
+}
+.rejilla-estilos-exhibidor {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 30vh;
+  overflow: auto;
+  padding: 4px;
+}
+.opcion-estilo {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
+  border: 2px solid #D8C9A8;
+  border-radius: var(--radio-borde-chico);
+  background: #FFFDF7;
+  color: var(--color-texto);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+}
+.opcion-estilo.elegida {
+  border-color: var(--color-rojo-cereza);
+  background: #fff1d6;
+  box-shadow: 0 0 0 2px var(--color-rojo-cereza);
+}
+.miniatura-estilo { width: 100%; max-width: 72px; }
+
+/* =================================================================
+   21) PERFIL: "MIS COSITAS" MÁS PEQUEÑO QUE EL EXHIBIDOR
+   =================================================================
+   El exhibidor es el protagonista del muro, así que la sección
+   "Mis cositas" se dibuja en miniatura: más columnas, menos relleno,
+   letra más chica y un título más discreto.
+   - Celular: 4 columnas (el exhibidor tiene 3, así que cada cosita queda más chica).
+   - Computador (700px o más): 6 columnas.
+   Para ajustar el tamaño, cambia el número de columnas ("repeat(4" y "repeat(6").
+------------------------------------------------------------------ */
+
+/* Título de la sección, más discreto que el de "Exhibidor". */
+#titulo-muro-coleccionables {
+  margin-bottom: 0;
+  font-size: 1.1rem;
+}
+
+/* Rejilla con más columnas y menos espacio entre tarjetas. */
+#muro-coleccionables {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* Cada cosita: tarjeta compacta. */
+#muro-coleccionables li {
+  gap: 4px;
+  padding: 5px;
+  border-width: 1px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(59, 46, 32, 0.15);
+}
+
+#muro-coleccionables li .boton-articulo-muro {
+  gap: 4px;
+}
+
+#muro-coleccionables li img {
+  border-radius: 6px;
+}
+
+/* Nombre pequeño, en máximo 2 líneas (el nombre completo se ve al abrir el detalle). */
+#muro-coleccionables li strong {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.66rem;
+  font-weight: 600;
+  line-height: 1.2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Mensaje de "Aún no hay coleccionables" mantiene su tamaño normal de texto. */
+#muro-coleccionables .muro-vacio {
+  font-size: 0.85rem;
+}
+
+@media (min-width: 700px) {
+  #muro-coleccionables {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+  }
+  #muro-coleccionables li strong {
+    font-size: 0.7rem;
+  }
+}
+
+
+/* ============================================================
+   20) "MIS COSITAS" PLEGABLE (perfil.html)
+   Un solo botón con la carátula de tazos; al tocarlo se despliega
+   la grilla de tazos. La lógica está en mostrarColeccionPlegable()
+   de js/perfil.js.
+   ============================================================ */
+/* Plegada: solo se ve la portada, los tazos quedan ocultos. */
+#muro-coleccionables.coleccion-cerrada li:not(.portada-coleccion) {
+  display: none;
+}
+
+/* La portada ocupa todo el ancho de la grilla. */
+#muro-coleccionables li.portada-coleccion {
+  grid-column: 1 / -1;
+  padding: 10px;
+  border-width: 2px;
+  border-radius: var(--radio-borde-chico);
+  background: linear-gradient(135deg, #2b2340 0%, #3d2f5c 60%, #5b3a1e 100%);
+  box-shadow: var(--sombra-tarjeta);
+}
+
+#muro-coleccionables li.portada-coleccion .boton-portada-coleccion {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  color: #fff8e7;
+}
+
+/* La portada es una fila: la carátula, los textos y el logo deben conservar
+   su propio espacio. Sin esto, el logo heredaba el estilo de las imágenes de
+   los tazos (ancho 100%) y empujaba el título hasta dejarlo letra por letra. */
+#muro-coleccionables li.portada-coleccion .textos-portada-coleccion {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#muro-coleccionables li.portada-coleccion .logo-sabritas-coleccion {
+  flex: 0 0 68px;
+  width: 68px;
+  height: 68px;
+  aspect-ratio: auto;
+  margin-left: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  object-fit: contain;
+}
+
+.caratula-tazos {
+  position: relative;
+  flex: 0 0 auto;
+  width: 120px;
+  height: 84px;
+}
+
+/* Abanico de tazos: se superponen levemente, de izquierda a derecha. */
+#muro-coleccionables li.portada-coleccion .caratula-tazos img {
+  position: absolute;
+  top: 0;
+  width: 80px;
+  height: 80px;
+  aspect-ratio: 1 / 1;
+  border: 2px solid #fff8e7;
+  border-radius: 50%;
+  background-color: transparent;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+  object-fit: cover;
+}
+
+#muro-coleccionables li.portada-coleccion .caratula-tazos img:nth-child(1) { left: 0; transform: rotate(-8deg); }
+#muro-coleccionables li.portada-coleccion .caratula-tazos img:nth-child(2) { left: 20px; transform: rotate(2deg); }
+#muro-coleccionables li.portada-coleccion .caratula-tazos img:nth-child(3) { left: 40px; transform: rotate(10deg); }
+
+/* Si se usa una foto fija como carátula, ocupa todo el recuadro. */
+#muro-coleccionables li.portada-coleccion .caratula-tazos img:only-child {
+  left: 0;
+  width: 120px;
+  height: 84px;
+  border-radius: 8px;
+  transform: none;
+}
+
+.textos-portada-coleccion {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#muro-coleccionables li.portada-coleccion .textos-portada-coleccion strong {
+  display: block;
+  overflow: visible;
+  font-family: var(--fuente-titulos, inherit);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.textos-portada-coleccion span {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.textos-portada-coleccion .indicador-portada-coleccion {
+  margin-top: 4px;
+  color: #f6c744;
+  font-weight: 700;
+  opacity: 1;
+}
+
+.logo-sabritas-coleccion {
+  flex: 0 0 auto;
+  width: 68px;
+  height: 68px;
+  margin-left: auto;
+  object-fit: contain;
+  opacity: 0.48;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+  pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  #muro-coleccionables li.portada-coleccion .logo-sabritas-coleccion {
+    flex-basis: 48px;
+    width: 48px;
+    height: 48px;
+  }
+}
+
+#muro-coleccionables li.portada-coleccion .boton-portada-coleccion:hover .indicador-portada-coleccion {
+  text-decoration: underline;
+}
+
+
+/* ---- Página "Usuario root": lista de usuarios registrados ---- */
+.layout-root { display: block; }
+.registro-root {
+  max-width: var(--ancho-contenido); margin: 16px auto 0; padding: 16px;
+  background: var(--color-papel); border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico); box-shadow: var(--sombra-tarjeta);
+  box-sizing: border-box; width: calc(100% - 32px);
+}
+.registro-root.oculto { display: none; }
+.registro-root h2 { margin: 0 0 8px; font-size: 1.15rem; }
+.registro-root-contador { margin: 0 0 12px; display: flex; align-items: baseline; gap: 8px; }
+.registro-root-contador strong { font-size: 2rem; line-height: 1; color: var(--color-rojo-cereza); }
+.registro-root-contador span { color: var(--color-texto-suave); font-weight: 600; }
+.registro-root-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 60vh; overflow-y: auto; }
+.registro-root-item {
+  display: grid; gap: 2px; padding: 8px 10px; background: var(--color-blanco, #fff);
+  border: 1px solid var(--color-mostaza); border-radius: var(--radio-borde-chico);
+}
+.registro-root-item-cabecera {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.registro-root-dato { font-size: .82rem; color: var(--color-texto-suave); overflow-wrap: anywhere; }
+.registro-root-acciones {
+  display: none; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 8px;
+  padding-top: 8px; border-top: 1px dashed var(--color-mostaza);
+}
+.btn-engranaje-usuario {
+  display: none; flex: 0 0 auto; width: 30px; height: 30px; padding: 0;
+  align-items: center; justify-content: center; border: 2px solid var(--color-mostaza);
+  border-radius: 50%; background: transparent; color: var(--color-mostaza-oscuro);
+  cursor: pointer; font-size: 1.05rem; line-height: 1;
+  transition: transform .2s ease, background-color .15s ease;
+}
+.root-herramientas-abiertas .btn-engranaje-usuario { display: inline-flex; }
+.btn-engranaje-usuario:hover,
+.btn-engranaje-usuario[aria-expanded="true"] {
+  background-color: var(--color-mostaza); color: var(--color-texto); transform: rotate(45deg);
+}
+.usuario-herramientas-abiertas .registro-root-acciones { display: grid; }
+.registro-root-acciones button { min-height: 38px; padding: 6px 8px; font-size: .78rem; }
+.registro-root-monto-label {
+  display: flex; align-items: center; gap: 6px; grid-column: 1 / -1;
+  color: var(--color-texto-suave); font-size: .82rem; font-weight: 700;
+}
+.registro-root-monto {
+  width: 86px; min-height: 34px; padding: 4px 7px; box-sizing: border-box;
+  border: 2px solid var(--color-mostaza); border-radius: var(--radio-borde-chico);
+  background: var(--color-blanco); color: var(--color-texto); font: inherit;
+}
+.registro-root-acciones .boton-comprar { grid-column: 1 / -1; }
+
+/* En computador: la lista va a la izquierda y las herramientas a la derecha. */
+@media (min-width: 1000px) {
+  .layout-root {
+    display: grid; grid-template-columns: 320px minmax(0, 640px);
+    justify-content: center; align-items: start; gap: 24px; padding: 0 16px;
+  }
+  .registro-root {
+    position: sticky; top: 16px; margin: 24px 0 0; width: auto; max-width: none;
+  }
+  .registro-root.oculto { display: none; }
+  .registro-root-lista { max-height: calc(100vh - 200px); }
+}
+
+/* ---- Usuario root: engranaje de "Usuarios registrados" y modal de limpieza ---- */
+.registro-root-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.registro-root-cabecera h2 { margin: 0; }
+.btn-engranaje-root {
+  flex: 0 0 auto; width: 36px; height: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--color-mostaza-oscuro);
+  border: 2px solid var(--color-mostaza); border-radius: 50%; cursor: pointer;
+  transition: transform .25s ease, background-color .15s ease;
+}
+.btn-engranaje-root:hover { background-color: var(--color-mostaza); color: var(--color-texto); }
+.btn-engranaje-root[aria-expanded="true"] { background-color: var(--color-mostaza); color: var(--color-texto); transform: rotate(60deg); }
+.btn-engranaje-root:focus-visible { outline: 3px solid var(--color-rojo-cereza); outline-offset: 2px; }
+.registro-root-ajustes {
+  display: grid; gap: 8px; margin: 0 0 12px; padding: 10px;
+  background: var(--color-blanco); border: 2px dashed var(--color-mostaza); border-radius: var(--radio-borde-chico);
+}
+.registro-root-ajustes.oculto { display: none; }
+.registro-root-ajustes button { width: 100%; }
+
+.modal-limpieza-root {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+  padding: 18px; background: rgba(59, 46, 32, 0.72);
+}
+.modal-limpieza-root.oculto { display: none !important; }
+.modal-limpieza-root-contenido {
+  position: relative; width: min(100%, 640px); max-height: 92vh; overflow: auto;
+  padding: 20px; background: var(--color-papel); border: 3px solid var(--color-mostaza);
+  border-radius: var(--radio-borde); box-shadow: 0 18px 40px rgba(59, 46, 32, 0.35);
+}
+/* Dentro del modal la sección no necesita su propia tarjeta. */
+.modal-limpieza-root-contenido .bloque-admin { margin: 0; padding: 0; background: none; box-shadow: none; }
+.modal-limpieza-root-contenido .bloque-admin h2 { padding-right: 42px; }

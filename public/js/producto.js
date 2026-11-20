@@ -21,6 +21,40 @@ const firebaseConfig = {
   appId: "1:971467965546:web:14470274e9affe6fdc291d"
 };
 
+// Solo los álbumes quedan reservados para una próxima etapa. El resto de los
+// productos, como las papas, sigue disponible para comprar.
+const COMPRAS_HABILITADAS = true;
+const SONIDO_COMPRA_PAPAS = "assets/audio/abriendo-envase-papas.wav";
+
+function esCompraProximamente(opcion) {
+  const texto = [opcion && opcion.nombre, opcion && opcion.subtitulo]
+    .filter(Boolean)
+    .join(" ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  return texto.includes("album") || texto.includes("dragon ball");
+}
+
+function reproducirSonidoCompra(opcion) {
+  const texto = [opcion && opcion.nombre, opcion && opcion.subtitulo]
+    .filter(Boolean)
+    .join(" ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  if (!texto.includes("papa") && !texto.includes("cheet")) return Promise.resolve();
+  const sonido = new Audio(SONIDO_COMPRA_PAPAS);
+  sonido.volume = 0.75;
+  return new Promise((resolver) => {
+    sonido.addEventListener("ended", resolver, { once: true });
+    sonido.play().catch((error) => {
+      console.warn("No se pudo reproducir el sonido de compra:", error.message);
+      resolver();
+    });
+  });
+}
+
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -337,11 +371,20 @@ function mostrarCompraConfirmada(articuloComprado, coleccionablesGanados, tipoAr
   const contenido = document.createElement("div");
   contenido.className = "modal-premio-contenido";
 
+  // Obtener dos coleccionables es un premio poco frecuente: la ventana toma
+  // una apariencia de celebración y lo anuncia claramente.
+  const esPremioDoble = Array.isArray(coleccionablesGanados) && coleccionablesGanados.length > 1;
+  if (esPremioDoble) modal.classList.add("modal-premio-celebracion");
+
   const titulo = document.createElement("h2");
-  titulo.textContent = "Compraste " + articuloComprado.nombre;
+  titulo.textContent = esPremioDoble
+    ? "¡Ganaste el doble!"
+    : "Compraste " + articuloComprado.nombre;
 
   const bajada = document.createElement("p");
-  bajada.textContent = tipoArticulo === "Objeto"
+  bajada.textContent = esPremioDoble
+    ? "¡Qué suerte! Esta compra te dio dos coleccionables."
+    : tipoArticulo === "Objeto"
     ? "El objeto se agregó a tu inventario."
     : "El coleccionable se agregó a tu colección.";
 
@@ -470,6 +513,8 @@ function mostrarDetalleOpcion(opcion, textoDescripcion, referenciaUsuario) {
     columnaImagen.classList.add("sin-imagen");
     columnaImagen.textContent = "Sin imagen";
   }
+  const compraDisponible = COMPRAS_HABILITADAS && !esCompraProximamente(opcion);
+  columnaImagen.classList.toggle("producto-proximamente", !compraDisponible);
 
   // ---- Columna derecha: textos y compra ----
   const columnaInfo = document.createElement("div");
@@ -517,7 +562,9 @@ function mostrarDetalleOpcion(opcion, textoDescripcion, referenciaUsuario) {
   botonComprar.type = "button";
   botonComprar.className = "boton-comprar";
   botonComprar.textContent = "Comprar";
-  botonComprar.addEventListener("click", () => {
+  botonComprar.disabled = !compraDisponible;
+  botonComprar.setAttribute("aria-disabled", String(!compraDisponible));
+  if (compraDisponible) botonComprar.addEventListener("click", () => {
     cerrar();
     comprarOpcion(referenciaUsuario, opcion);
   });
@@ -546,15 +593,11 @@ function dibujarOpciones(opciones, referenciaUsuario) {
     const tarjeta = document.createElement("div");
     tarjeta.className = "tarjeta-opcion";
 
-    const vistaProducto = document.createElement("button");
+    const vistaProducto = document.createElement("div");
     vistaProducto.className = "vista-producto-comprable";
-    vistaProducto.type = "button";
-    vistaProducto.setAttribute("aria-label", opcion.nombre);
-    // Al tocar el producto se abre una ventana con la imagen grande y su
-    // descripción. Desde ahí (o con el botón "Comprar" de la tarjeta) se compra.
-    vistaProducto.addEventListener("click", () => {
-      mostrarDetalleOpcion(opcion, textoDescripcion.textContent, referenciaUsuario);
-    });
+    const compraDisponible = COMPRAS_HABILITADAS && !esCompraProximamente(opcion);
+    vistaProducto.classList.toggle("producto-proximamente", !compraDisponible);
+    vistaProducto.setAttribute("aria-label", opcion.nombre + (compraDisponible ? "" : ". Próximamente."));
 
     const descripcionElemento = document.createElement("div");
     descripcionElemento.className = "descripcion-opcion";
@@ -594,6 +637,14 @@ function dibujarOpciones(opciones, referenciaUsuario) {
 
     vistaProducto.appendChild(descripcionElemento);
 
+    tarjeta.appendChild(vistaProducto);
+    if (opcion.subtitulo) {
+      const subtituloElemento = document.createElement("p");
+      subtituloElemento.className = "subtitulo-opcion";
+      subtituloElemento.textContent = opcion.subtitulo;
+      tarjeta.appendChild(subtituloElemento);
+    }
+
     const compraProducto = document.createElement("div");
     compraProducto.className = "compra-producto";
 
@@ -603,14 +654,16 @@ function dibujarOpciones(opciones, referenciaUsuario) {
 
     const botonComprar = document.createElement("button");
     botonComprar.className = "boton-comprar";
+    botonComprar.type = "button";
     botonComprar.textContent = "Comprar";
-    botonComprar.addEventListener("click", () => {
+    botonComprar.disabled = !compraDisponible;
+    botonComprar.setAttribute("aria-disabled", String(!compraDisponible));
+    if (compraDisponible) botonComprar.addEventListener("click", () => {
       comprarOpcion(referenciaUsuario, opcion);
     });
 
     compraProducto.appendChild(precioElemento);
     compraProducto.appendChild(botonComprar);
-    tarjeta.appendChild(vistaProducto);
     tarjeta.appendChild(compraProducto);
     grillaOpciones.appendChild(tarjeta);
   });
@@ -620,6 +673,7 @@ function dibujarOpciones(opciones, referenciaUsuario) {
 // 5) FUNCIÓN: comprar una opción
 // -----------------------------------------------------------------
 function comprarOpcion(referenciaUsuario, opcion) {
+  if (!COMPRAS_HABILITADAS || esCompraProximamente(opcion)) return;
   if (!auth.currentUser || !referenciaUsuario) {
     alert("Inicia sesión con Google para comprar este producto.");
     return;
@@ -674,8 +728,10 @@ function comprarOpcion(referenciaUsuario, opcion) {
     loteCompra.set(db.collection("perfilesPublicos").doc(auth.currentUser.uid), cambiosPerfilPublico, { merge: true });
 
     loteCompra.commit().then(() => {
-      mostrarCompraConfirmada(articuloComprado, coleccionablesGanados, tipoArticulo);
-      mostrarMonedasDisponibles(monedasActuales - opcion.precio);
+      return reproducirSonidoCompra(opcion).then(() => {
+        mostrarCompraConfirmada(articuloComprado, coleccionablesGanados, tipoArticulo);
+        mostrarMonedasDisponibles(monedasActuales - opcion.precio);
+      });
     }).catch((error) => {
       console.error("Error al comprar:", error.message);
       alert("Ocurrió un error al procesar la compra. Intenta de nuevo.");

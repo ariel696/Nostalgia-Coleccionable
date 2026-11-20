@@ -37,10 +37,10 @@
   const formatearPesos = (n) => "$" + num(n) + " pesos";
   const formatearMonedas = (n) => {
     const monedas = Number(n) || 0;
-    return monedas + (monedas === 1 ? " moneda" : " monedas") + " (" + formatearPesos(monedas * PESOS_POR_MONEDA) + ")";
+    return formatearPesos(monedas * PESOS_POR_MONEDA);
   };
   const esMontoValido = (n) => Number.isInteger(n) && n >= MONTO_MINIMO && n <= MONTO_MAXIMO && n % MONTO_MINIMO === 0;
-  const textoReglaMonto = () => "El monto debe ser múltiplo de $50, entre $50 y $" + num(MONTO_MAXIMO) + " (monedas de $50, $100 y $500 y billete de $1.000).";
+  const textoReglaMonto = () => "El monto debe ser múltiplo de $50, entre $50 y $" + num(MONTO_MAXIMO) + ".";
 
   // Cuántas monedas/billetes hacen falta para un monto, usando las más grandes primero.
   function desglose(monto) {

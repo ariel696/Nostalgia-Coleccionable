@@ -75,6 +75,7 @@ const googleProvider = new firebase.auth.GoogleAuthProvider();
 // cargue al otro con <script>). Es la misma idea que ya usamos con
 // firebaseConfig, que también está repetida en cada archivo.
 const EMAIL_ADMIN = "arielriquelme08@gmail.com";
+const INTERCAMBIOS_HABILITADOS = false;
 
 // -----------------------------------------------------------------
 // 3) REFERENCIAS A LOS ELEMENTOS DEL HTML
@@ -97,6 +98,7 @@ const botonDineroDiario = document.getElementById("btn-dinero-diario") || docume
 const botonRegaloDiario = document.getElementById("btn-regalo-diario") || document.createElement("button");
 const estadoDineroDiario = document.getElementById("estado-dinero-diario") || document.createElement("p");
 const linkMiColeccion = document.getElementById("link-mi-coleccion");
+const fotoBotonPerfil = document.getElementById("foto-boton-perfil");
 const linkIntercambios = document.getElementById("link-intercambios");
 const linkZonaJuego = document.getElementById("link-zona-juego") || document.createElement("a");
 const linkRoot = document.getElementById("link-root");
@@ -115,6 +117,15 @@ const estadoModalLugares = document.getElementById("estado-modal-lugares") || do
 const grillaLugaresCompra = document.getElementById("grilla-lugares-compra") || document.createElement("div");
 const linkAdminModal = document.getElementById("link-admin-modal") || document.createElement("a");
 const IMAGEN_LUGAR_RESPALDO = "assets/img/cheetos-tazos.png";
+
+function normalizarCodigoRegalo(texto) {
+  return String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 40);
+}
 
 function mostrarErrorInicioSesion(error) {
   const codigo = error && error.code ? error.code : "";
@@ -171,14 +182,16 @@ function iniciarSesionConGoogle() {
     });
 }
 
-// Convierte un nombre o código en una clave estable: sin espacios, tildes ni
-// símbolos. El código visible queda corto y fácil de compartir.
+// Convierte un nombre o código en una clave estable. Conservamos el guion
+// porque forma parte de los códigos temporales de referido.
 function normalizarCodigoReferido(texto) {
   return String(texto || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, "")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
     .slice(0, 40);
 }
 
@@ -207,6 +220,28 @@ function reservarNombreUsuario(usuario) {
   });
 }
 
+function buscarReferenciaCodigoReferido(codigo) {
+  const codigoLegado = codigo.includes("-")
+    ? codigo.split("-")[0] + "-" + codigo.split("-").slice(1).join("-").toUpperCase()
+    : codigo;
+  const idsDirectos = [...new Set([codigo, codigoLegado])];
+  const referencias = idsDirectos.map((id) => db.collection("codigosReferido").doc(id));
+  return Promise.all(referencias.map((referencia) => referencia.get())).then((fichas) => {
+    const indice = fichas.findIndex((ficha) => ficha.exists);
+    if (indice >= 0) return referencias[indice];
+    // Respaldo para códigos antiguos cuyo identificador quedó con otra
+    // combinación de mayúsculas: comparamos el valor normalizado.
+    return db.collection("codigosReferido").get().then((coleccion) => {
+      const encontrado = coleccion.docs.find((documento) => {
+        const datos = documento.data() || {};
+        return [documento.id, datos.codigo, datos.codigoVisible]
+          .some((valor) => normalizarCodigoReferido(valor) === codigo);
+      });
+      return encontrado ? encontrado.ref : null;
+    });
+  });
+}
+
 function aplicarCodigoReferidoPendiente(usuario, nombreUsuario) {
   const avisarCodigo = (mensaje) => {
     if (estadoCodigoReferido) estadoCodigoReferido.textContent = mensaje;
@@ -222,16 +257,19 @@ function aplicarCodigoReferidoPendiente(usuario, nombreUsuario) {
     return Promise.resolve(false);
   }
 
-  const referidoRef = db.collection("nombresUsuario").doc(codigo);
-  const codigoTemporalRef = db.collection("codigosReferido").doc(codigo);
   const invitacionRef = db.collection("referidos").doc(usuario.uid);
   const usuarioRef = db.collection("usuarios").doc(usuario.uid);
-  return db.runTransaction((transaccion) => Promise.all([
-    transaccion.get(codigoTemporalRef),
-    transaccion.get(invitacionRef),
-    transaccion.get(usuarioRef)
-  ]).then(([codigoTemporal, invitacion, ficha]) => {
-    if (!codigoTemporal.exists) {
+  return buscarReferenciaCodigoReferido(codigo).then((codigoTemporalRef) => {
+    if (!codigoTemporalRef) {
+      avisarCodigo("Ese código de referido no existe o no es válido.");
+      return false;
+    }
+    return db.runTransaction((transaccion) => Promise.all([
+      transaccion.get(codigoTemporalRef),
+      transaccion.get(invitacionRef),
+      transaccion.get(usuarioRef)
+    ]).then(([codigoTemporal, invitacion, ficha]) => {
+    if (!codigoTemporal || !codigoTemporal.exists) {
       avisarCodigo("Ese código de referido no existe o ya expiró.");
       return false;
     }
@@ -260,17 +298,18 @@ function aplicarCodigoReferidoPendiente(usuario, nombreUsuario) {
       codigoReferidoUsado: codigo,
       codigoReferidoActivo: firebase.firestore.FieldValue.delete()
     });
-    transaccion.update(codigoTemporalRef, { usado: true, usadoPor: usuario.uid, usadoEn: firebase.firestore.FieldValue.serverTimestamp() });
+    transaccion.update(codigoTemporal.ref, { usado: true, usadoPor: usuario.uid, usadoEn: firebase.firestore.FieldValue.serverTimestamp() });
     transaccion.set(invitacionRef, {
       referidoUid: usuario.uid,
       referrerUid,
-      codigo,
+      codigo: codigoTemporal.id,
       beneficioNuevoUsuario: 5,
       comisionInvitador: 10,
       creadoEn: firebase.firestore.FieldValue.serverTimestamp()
     });
     return referrerUid;
-  })).then((referrerUid) => {
+    }));
+  }).then((referrerUid) => {
     if (!referrerUid) return false;
     const referrerRef = db.collection("usuarios").doc(referrerUid);
     return db.runTransaction((transaccion) => transaccion.get(referrerRef).then((fichaInvitador) => {
@@ -295,7 +334,16 @@ function actualizarCampoReferido(usuario) {
   ]).then(([ficha, invitacion]) => {
     const datos = ficha.exists ? ficha.data() : {};
     const yaUsoCodigo = invitacion.exists || datos.codigoReferidoUsado;
-    campoReferidoLogueado.classList.toggle("oculto", Boolean(yaUsoCodigo));
+    if (!datos.codigoReferidoUsado && invitacion.exists) {
+      // Si root formateó la cuenta, el campo de uso ya fue eliminado y este
+      // documento restante es un registro antiguo que debe limpiarse.
+      return db.collection("referidos").doc(usuario.uid).delete().then(() => {
+        campoReferidoLogueado.classList.remove("oculto");
+      });
+    }
+    // El mismo campo también sirve para códigos de regalo, por eso debe
+    // seguir visible aunque la cuenta ya haya usado un código de referido.
+    campoReferidoLogueado.classList.remove("oculto");
   }).catch(() => campoReferidoLogueado.classList.remove("oculto"));
 }
 
@@ -316,6 +364,22 @@ function cerrarSesion() {
   });
 }
 
+function actualizarFotoBotonPerfil(url) {
+  if (!fotoBotonPerfil) return;
+  const foto = typeof url === "string" ? url.trim() : "";
+  if (!foto) {
+    fotoBotonPerfil.removeAttribute("src");
+    fotoBotonPerfil.classList.add("oculto");
+    return;
+  }
+  fotoBotonPerfil.src = foto;
+  fotoBotonPerfil.classList.remove("oculto");
+  fotoBotonPerfil.onerror = () => {
+    fotoBotonPerfil.removeAttribute("src");
+    fotoBotonPerfil.classList.add("oculto");
+  };
+}
+
 function obtenerOCrearUsuario(usuario) {
   // db.collection("usuarios") -> apunta a la "carpeta" de usuarios.
   // .doc(usuario.uid) -> apunta a la "ficha" específica de esta persona,
@@ -334,9 +398,22 @@ function obtenerOCrearUsuario(usuario) {
       // { monedas: 500, ultimoReclamo: ... }
       const datos = ficha.data();
       const monedas = Number(datos.monedas) || 0;
+      actualizarFotoBotonPerfil(datos.fotoPerfil || usuario.photoURL || "");
       parrafoEstadoUsuario.textContent = "Hola, " + (datos.nombreUsuario || usuario.displayName || "Usuario");
       mostrarMonedasEnPantalla(monedas);
       actualizarEstadoDineroDiario(datos.ultimoReclamo);
+
+      // Guardamos (o actualizamos) el correo y el nombre de la cuenta de Google en la
+      // ficha privada, para que el usuario root pueda verlos en su lista de registrados.
+      // Así también se completan las cuentas antiguas la próxima vez que ingresen.
+      const datosCuenta = {};
+      if (usuario.email && datos.email !== usuario.email) datosCuenta.email = usuario.email;
+      if (usuario.displayName && datos.nombre !== usuario.displayName) datosCuenta.nombre = usuario.displayName;
+      if (Object.keys(datosCuenta).length) {
+        referenciaUsuario.set(datosCuenta, { merge: true }).catch((error) => {
+          console.error("Error al guardar el correo y nombre de la cuenta:", error.message);
+        });
+      }
 
       if (!Number.isFinite(Number(datos.monedas))) {
         referenciaUsuario.set({ monedas: monedas }, { merge: true });
@@ -360,7 +437,11 @@ function obtenerOCrearUsuario(usuario) {
         ultimoReclamo: null, // null = "todavía nunca reclamó nada"
         coleccionables: [], // [] = una lista vacía: todavía no tiene ningún objeto coleccionable
         inventario: [],
-        fotoPerfil: usuario.photoURL || ""
+        fotoPerfil: usuario.photoURL || "",
+        // Datos de la cuenta de Google (ficha privada: solo el dueño y el root la leen).
+        email: usuario.email || "",
+        nombre: usuario.displayName || "",
+        creadoEn: firebase.firestore.FieldValue.serverTimestamp()
       };
 
       reservarNombreUsuario(usuario).then((nombreUsuario) => {
@@ -371,6 +452,7 @@ function obtenerOCrearUsuario(usuario) {
       referenciaUsuario.set(datosIniciales).then(() => {
         return aplicarCodigoReferidoPendiente(usuario, nombreUsuario);
       }).then((aplicado) => {
+        actualizarFotoBotonPerfil(datosIniciales.fotoPerfil || usuario.photoURL || "");
         parrafoEstadoUsuario.textContent = "Hola, " + nombreUsuario;
         if (aplicado) datosIniciales.monedas += 5;
         mostrarMonedasEnPantalla(datosIniciales.monedas);
@@ -473,7 +555,7 @@ function actualizarEstadoDineroDiario(ultimoReclamo) {
     mostrarBotonesDineroDiario(true);
     botonDineroDiario.disabled = false;
     botonRegaloDiario.disabled = false;
-    estadoDineroDiario.textContent = "Tienes $500 pesos chilenos disponibles para reclamar hoy.";
+      estadoDineroDiario.textContent = "Tienes $500 pesos disponibles para reclamar hoy.";
   } else {
     // Todavía no se puede reclamar: el botón de texto desaparece hasta que pasen las 24 h
     // (las monedas quedan visibles pero deshabilitadas).
@@ -713,10 +795,10 @@ function agarrarDineroDiario() {
     mostrarMonedasEnPantalla(resultado.monedas);
 
     if (resultado.entregado) {
-      estadoDineroDiario.textContent = "Te dieron $500 pesos chilenos. Podrás reclamarlos de nuevo en " + formatearTiempoRestanteReclamo(resultado.ultimoReclamo) + ".";
+      estadoDineroDiario.textContent = "Te dieron $500 pesos. Podrás reclamarlos de nuevo en " + formatearTiempoRestanteReclamo(resultado.ultimoReclamo) + ".";
       // Ya reclamó: se esconde el botón de texto y se programa su regreso en 24 h.
       actualizarEstadoDineroDiario(resultado.ultimoReclamo);
-      estadoDineroDiario.textContent = "Te dieron $500 pesos chilenos. Podrás reclamarlos de nuevo en " + formatearTiempoRestanteReclamo(resultado.ultimoReclamo) + ".";
+      estadoDineroDiario.textContent = "Te dieron $500 pesos. Podrás reclamarlos de nuevo en " + formatearTiempoRestanteReclamo(resultado.ultimoReclamo) + ".";
     } else {
       actualizarEstadoDineroDiario(resultado.ultimoReclamo);
     }
@@ -774,11 +856,104 @@ function recargarMonedasRoot() {
     botonRecargarMonedas.disabled = false;
   });
 }
+
+function canjearCodigoRegalo(usuario, codigo) {
+  const referenciaUsuario = db.collection("usuarios").doc(usuario.uid);
+  const referenciaCodigo = db.collection("codigosRegalo").doc(codigo);
+
+  return db.runTransaction((transaccion) => transaccion.get(referenciaCodigo).then((codigoSnap) => {
+    if (!codigoSnap.exists) throw new Error("CODIGO_NO_EXISTE");
+    const datosCodigo = codigoSnap.data() || {};
+    const premioPesos = Number.isFinite(Number(datosCodigo.premioPesos))
+      ? Math.floor(Number(datosCodigo.premioPesos))
+      : Math.floor(Number(datosCodigo.monedas) || 0) * 100;
+    const premioMonedas = premioPesos / 100;
+    const expiraEn = datosCodigo.expiraEn;
+    const vencido = expiraEn && typeof expiraEn.toMillis === "function" && expiraEn.toMillis() <= Date.now();
+    if (datosCodigo.activo === false || !Number.isFinite(premioPesos) || premioPesos < 1 || vencido) {
+      throw new Error("CODIGO_NO_VALIDO");
+    }
+    if (datosCodigo.tipoLimite === "usos" && Number(datosCodigo.usos) >= Number(datosCodigo.maxUsos)) {
+      throw new Error("CODIGO_AGOTADO");
+    }
+    return transaccion.get(referenciaUsuario).then((ficha) => {
+      if (!ficha.exists) throw new Error("REGISTRO_INCOMPLETO");
+      const datos = ficha.data() || {};
+      const usados = Array.isArray(datos.codigosRegaloUsados) ? datos.codigosRegaloUsados : [];
+      if (usados.includes(codigo)) throw new Error("CODIGO_YA_USADO");
+      const monedas = Number(datos.monedas) || 0;
+      transaccion.update(referenciaUsuario, {
+        monedas: monedas + premioMonedas,
+        codigosRegaloUsados: [...usados, codigo]
+      });
+      transaccion.update(referenciaCodigo, {
+        usos: (Number(datosCodigo.usos) || 0) + 1
+      });
+      return { monedasNuevas: monedas + premioMonedas, premioPesos };
+    });
+  }));
+}
+
+function aplicarCodigoUnificado() {
+  const usuario = auth.currentUser;
+  const texto = inputCodigoReferido && inputCodigoReferido.value.trim();
+  if (!usuario || !inputCodigoReferido || !botonAplicarReferido || !estadoCodigoReferido) return;
+  if (!texto) {
+    estadoCodigoReferido.textContent = "Ingresa un código de referido o de regalo.";
+    return;
+  }
+
+  botonAplicarReferido.disabled = true;
+  estadoCodigoReferido.textContent = "Comprobando código...";
+  const codigoRegalo = normalizarCodigoRegalo(texto);
+  const codigoReferido = normalizarCodigoReferido(texto);
+  db.collection("codigosRegalo").doc(codigoRegalo).get().then((codigoRegaloSnap) => {
+    if (codigoRegaloSnap.exists) {
+      return canjearCodigoRegalo(usuario, codigoRegalo).then(({ monedasNuevas, premioPesos }) => {
+        mostrarMonedasEnPantalla(monedasNuevas);
+        inputCodigoReferido.value = "";
+        estadoCodigoReferido.textContent = "¡Código aceptado! Recibiste $" + premioPesos.toLocaleString("es-CL") + " pesos.";
+        return true;
+      });
+    }
+    localStorage.setItem("codigoReferidoPendiente", codigoReferido);
+    return db.collection("usuarios").doc(usuario.uid).get().then((ficha) => {
+      const datos = ficha.exists ? ficha.data() : {};
+      return aplicarCodigoReferidoPendiente(usuario, datos.nombreUsuario || datos.codigoReferido || "");
+    }).then((aplicado) => {
+      if (aplicado) {
+        campoReferidoLogueado.classList.add("oculto");
+        inputCodigoReferido.value = "";
+        estadoCodigoReferido.textContent = "Tu código de referido ha sido ingresado exitosamente.";
+      } else if (!estadoCodigoReferido.textContent) {
+        estadoCodigoReferido.textContent = "El código no existe o no es válido.";
+      }
+      return aplicado;
+    });
+  }).catch((error) => {
+    if (error.message === "CODIGO_YA_USADO") {
+      estadoCodigoReferido.textContent = "Ya usaste este código de regalo en esta cuenta.";
+    } else if (error.message === "REGISTRO_INCOMPLETO") {
+      estadoCodigoReferido.textContent = "Primero debes completar tu registro.";
+    } else if (error.message === "CODIGO_AGOTADO") {
+      estadoCodigoReferido.textContent = "Este código ya alcanzó su límite de usos.";
+    } else if (error.message === "CODIGO_NO_VALIDO") {
+      estadoCodigoReferido.textContent = "Ese código está vencido o ya no está activo.";
+    } else {
+      console.error("Error al aplicar código:", error.message);
+      estadoCodigoReferido.textContent = "El código no existe o no es válido.";
+    }
+  }).finally(() => {
+    botonAplicarReferido.disabled = false;
+  });
+}
+
 auth.onAuthStateChanged((usuario) => {
   if (usuario) {
     // Caso: hay alguien logeado.
     tarjetaSaldo.classList.remove("oculto");
     actualizarCampoReferido(usuario);
+    actualizarFotoBotonPerfil(usuario.photoURL || "");
     parrafoEstadoUsuario.textContent = "Hola, " + usuario.displayName;
     botonAccionPrincipal.textContent = "A comprar";
 
@@ -789,6 +964,7 @@ auth.onAuthStateChanged((usuario) => {
     botonRegaloDiario.classList.remove("oculto");
     linkMiColeccion.classList.remove("oculto");
     linkIntercambios.classList.remove("oculto");
+    if (!INTERCAMBIOS_HABILITADOS) linkIntercambios.classList.add("funcion-deshabilitada");
     linkZonaJuego.classList.remove("oculto");
     botonCerrarSesion.classList.remove("oculto");
 
@@ -816,6 +992,7 @@ auth.onAuthStateChanged((usuario) => {
     tarjetaSaldo.classList.add("oculto");
     if (campoReferidoLogueado) campoReferidoLogueado.classList.add("oculto");
     parrafoEstadoUsuario.textContent = "";
+    actualizarFotoBotonPerfil("");
     botonAccionPrincipal.textContent = "Iniciar sesión con Google";
 
     // NUEVO: sin nadie logeado, no existe "su" colección, así que
@@ -880,30 +1057,7 @@ document.addEventListener("keydown", (evento) => {
 
 botonRecargarMonedas.addEventListener("click", recargarMonedasRoot);
 
-botonAplicarReferido.addEventListener("click", () => {
-  const usuario = auth.currentUser;
-  const codigo = normalizarCodigoReferido(inputCodigoReferido.value);
-  if (!usuario) return;
-  if (!codigo) {
-    estadoCodigoReferido.textContent = "Ingresa un código de referido.";
-    return;
-  }
-  botonAplicarReferido.disabled = true;
-  estadoCodigoReferido.textContent = "Comprobando código...";
-  localStorage.setItem("codigoReferidoPendiente", codigo);
-  db.collection("usuarios").doc(usuario.uid).get().then((ficha) => {
-    const datos = ficha.exists ? ficha.data() : {};
-    return aplicarCodigoReferidoPendiente(usuario, datos.nombreUsuario || datos.codigoReferido || "");
-  }).then((aplicado) => {
-    if (aplicado) {
-      campoReferidoLogueado.classList.add("oculto");
-      estadoCodigoReferido.textContent = "Tu código de referido ha sido ingresado exitosamente.";
-    } else {
-      estadoCodigoReferido.textContent = "El código no existe, ya fue usado o no es válido.";
-    }
-  }).catch(() => {
-    estadoCodigoReferido.textContent = "No se pudo comprobar el código. Inténtalo nuevamente.";
-  }).finally(() => {
-    botonAplicarReferido.disabled = false;
-  });
+botonAplicarReferido.addEventListener("click", aplicarCodigoUnificado);
+inputCodigoReferido.addEventListener("keydown", (evento) => {
+  if (evento.key === "Enter") aplicarCodigoUnificado();
 });

@@ -8,15 +8,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261118-10">
+    <link rel="stylesheet" href="css/style.css?v=20261119-10">
 </head>
 <body>
-    <header>
-        <h1 id="titulo-perfil">Perfil</h1>
+    <header class="perfil-header">
+        <div class="perfil-titulo-bloque">
+            <h1><span>Nostalgia</span> <span>Coleccionable</span></h1>
+            <p id="nombre-perfil-header" class="nombre-perfil-header"></p>
+        </div>
+        <div class="barra-header">
+            <a href="index.html" class="link-volver-header">&larr; Volver al inicio</a>
+            <a href="intercambios.html" id="link-intercambios" class="oculto funcion-deshabilitada" aria-disabled="true" tabindex="-1">Intercambios</a>
+            <a href="zona-juego.html" id="link-zona-juego" class="oculto funcion-deshabilitada" aria-disabled="true" tabindex="-1">Zona Juego</a>
+            <a href="perfil.html" id="link-mi-coleccion" class="oculto"><img id="foto-boton-perfil" class="foto-boton-perfil oculto" alt="" aria-hidden="true" decoding="async">Mi perfil</a>
+            <p id="monedas-usuario"></p>
+        </div>
     </header>
     <main>
-        <a href="index.html" class="link-volver">&larr; Volver al inicio</a>
-
         <p id="estado-perfil" class="texto-ayuda">Cargando perfil...</p>
 
         <section id="cabecera-perfil" class="cabecera-perfil oculto" aria-labelledby="nombre-perfil">
@@ -49,8 +57,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-    <script src="js/recorte-coleccionable.js?v=20261117-1"></script>
-    <script src="js/perfil.js?v=20261118-21"></script>
+    <script src="js/recorte-coleccionable.js?v=20261119-1"></script>
+    <script src="js/perfil.js?v=20261119-11"></script>
+    <script src="js/musica.js?v=20261119-1"></script>
 </body>
 </html>
 

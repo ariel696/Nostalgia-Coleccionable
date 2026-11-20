@@ -17,7 +17,12 @@ const estadoPerfil = document.getElementById("estado-perfil");
 const cabeceraPerfil = document.getElementById("cabecera-perfil");
 const fotoPerfil = document.getElementById("foto-perfil");
 const nombrePerfil = document.getElementById("nombre-perfil");
-const tituloPerfil = document.getElementById("titulo-perfil");
+const nombrePerfilHeader = document.getElementById("nombre-perfil-header");
+const linkIntercambios = document.getElementById("link-intercambios");
+const linkZonaJuego = document.getElementById("link-zona-juego");
+const linkMiPerfil = document.getElementById("link-mi-coleccion");
+const fotoBotonPerfil = document.getElementById("foto-boton-perfil");
+const monedasUsuario = document.getElementById("monedas-usuario");
 const muroColeccionables = document.getElementById("muro-coleccionables");
 const linkInventarioPrivado = document.getElementById("link-inventario-privado");
 const botonAjustes = document.getElementById("btn-ajustes");
@@ -26,6 +31,48 @@ const muroExhibidor = document.getElementById("muro-exhibidor");
 // Botón de ajustes (engranaje) en la línea del título "Exhibidor": muestra/oculta Cambiar y Quitar.
 const botonAjustesExhibidor = document.getElementById("btn-ajustes-exhibidor");
 const uidPerfil = new URLSearchParams(window.location.search).get("u");
+const INTERCAMBIOS_HABILITADOS = false;
+
+function mostrarFotoBotonPerfil(url) {
+  if (!fotoBotonPerfil) return;
+  const foto = typeof url === "string" ? url.trim() : "";
+  if (!foto) {
+    fotoBotonPerfil.removeAttribute("src");
+    fotoBotonPerfil.classList.add("oculto");
+    return;
+  }
+  fotoBotonPerfil.src = foto;
+  fotoBotonPerfil.classList.remove("oculto");
+  fotoBotonPerfil.onerror = () => {
+    fotoBotonPerfil.removeAttribute("src");
+    fotoBotonPerfil.classList.add("oculto");
+  };
+}
+
+function configurarBarraPrincipal(usuario) {
+  const enlaces = [linkIntercambios, linkZonaJuego, linkMiPerfil];
+  if (!usuario) {
+    enlaces.forEach((enlace) => enlace && enlace.classList.add("oculto"));
+    if (monedasUsuario) monedasUsuario.textContent = "";
+    mostrarFotoBotonPerfil("");
+    return;
+  }
+
+  enlaces.forEach((enlace) => enlace && enlace.classList.remove("oculto"));
+  if (!INTERCAMBIOS_HABILITADOS && linkIntercambios) linkIntercambios.classList.add("funcion-deshabilitada");
+  if (linkMiPerfil) linkMiPerfil.href = "perfil.html?u=" + encodeURIComponent(usuario.uid);
+  mostrarFotoBotonPerfil(usuario.photoURL || "");
+
+  db.collection("usuarios").doc(usuario.uid).get().then((ficha) => {
+    const datos = ficha.exists ? ficha.data() || {} : {};
+    const monedas = Math.max(0, Number(datos.monedas) || 0) * 100;
+    if (monedasUsuario) monedasUsuario.textContent = "Dinero: $" + monedas.toLocaleString("es-CL") + " pesos";
+    mostrarFotoBotonPerfil(datos.fotoPerfil || usuario.photoURL || "");
+  }).catch((error) => {
+    console.error("No se pudo cargar el dinero del usuario:", error.message);
+    if (monedasUsuario) monedasUsuario.textContent = "Dinero: $0 pesos";
+  });
+}
 
 // ---------------------------------------------------------------
 // Fondos del muro (imagen de portada). Cada usuario elige uno y se guarda
@@ -40,6 +87,41 @@ const FONDOS_MURO = [
   { id: "noche", nombre: "Noche estrellada" }
 ];
 let fondoMuroActual = "predeterminado";
+
+// Imágenes que la página ofrece para usar como foto de perfil sin subir un
+// archivo. Son recursos locales del sitio, así que siguen disponibles aunque
+// el usuario cambie de dispositivo.
+const IMAGENES_PERFIL_SITIO_BASE = [
+  { nombre: "Monedas", url: "assets/img/5monedaschile.jpg" },
+  { nombre: "Guerrero dorado", url: "assets/img/album-guerrerodorado.jpg" },
+  { nombre: "Cheetos tazos", url: "assets/img/cheetos-tazos.png" },
+  { nombre: "Regalo", url: "assets/img/escena-recompensa-1-mama.png" },
+  { nombre: "Pensando", url: "assets/img/escena-recompensa-2-pensando.png" },
+  { nombre: "Coleccionable", url: "assets/img/hqdefault.jpg" },
+  { nombre: "Temporal: imagen vertical", url: "assets/img/images.jfif" },
+  { nombre: "Temporal: paisaje", url: "assets/img/maxresdefault (1).jpg" },
+  { nombre: "Temporal: colección", url: "assets/img/watermarked_img_18184432429529158315.jpg" },
+  { nombre: "Temporal: tazo", url: "assets/img/28073990_04939a.avif" }
+];
+
+function cargarImagenesPerfilSitio() {
+  return db.collection("assets")
+    .where("categoria", "==", "Fotos de perfil")
+    .get()
+    .then((snap) => {
+      const administradas = snap.docs
+        .map((doc) => doc.data() || {})
+        .filter((asset) => asset.url)
+        .map((asset) => ({ nombre: asset.nombre || "Imagen de perfil", url: asset.url }));
+      const vistas = new Set();
+      return administradas.concat(IMAGENES_PERFIL_SITIO_BASE).filter((imagen) => {
+        if (vistas.has(imagen.url)) return false;
+        vistas.add(imagen.url);
+        return true;
+      });
+    })
+    .catch(() => IMAGENES_PERFIL_SITIO_BASE);
+}
 
 function aplicarFondoMuro(id) {
   const valido = FONDOS_MURO.some((f) => f.id === id) ? id : "predeterminado";
@@ -585,8 +667,10 @@ function generarCodigoTemporalReferido(usuario) {
       const expiraEn = informacion.expiraEn && informacion.expiraEn.toDate
         ? informacion.expiraEn.toDate().getTime()
         : 0;
+      const sufijo = String(codigo).split("-").pop();
       return codigo && informacion.uid === usuario.uid && !informacion.usado
         && codigo.toLowerCase().startsWith((base + "-").toLowerCase())
+        && /^[a-z0-9]{2}$/i.test(sufijo)
         && (!expiraEn || expiraEn > ahora);
     };
     const codigoGuardado = datos.codigoReferidoActivo;
@@ -609,21 +693,23 @@ function generarCodigoTemporalReferido(usuario) {
         return activos.length ? activos[0].id : null;
       });
     const alfabeto = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    const crearSufijo = () => Array.from({ length: 5 }, () => alfabeto[Math.floor(Math.random() * alfabeto.length)]).join("");
+    const crearSufijo = () => Array.from({ length: 2 }, () => alfabeto[Math.floor(Math.random() * alfabeto.length)]).join("");
     const intentar = (veces) => {
-      const codigo = base + "-" + crearSufijo();
+      const codigoVisible = base + "-" + crearSufijo();
+      const codigo = codigoVisible.toLowerCase();
       const codigoRef = db.collection("codigosReferido").doc(codigo);
       return db.runTransaction((transaccion) => transaccion.get(codigoRef).then((existente) => {
         if (existente.exists) throw new Error("COLISION_CODIGO");
         transaccion.set(codigoRef, {
           codigo,
+          codigoVisible,
           uid: usuario.uid,
           usado: false,
           creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
           expiraEn: firebase.firestore.Timestamp.fromDate(new Date(Date.now() + 60 * 60 * 1000))
         });
         transaccion.set(usuarioRef, { codigoReferidoActivo: codigo }, { merge: true });
-        return codigo;
+        return codigoVisible;
       })).catch((error) => {
         if (error.message === "COLISION_CODIGO" && veces < 5) return intentar(veces + 1);
         throw error;
@@ -666,25 +752,19 @@ function cambiarNombreUsuario(usuario, nombreNuevo, estadoElemento, mostrarNombr
     const codigoAnterior = datos.codigoReferido || datos.nombreUsuario || "";
     const nuevoRef = nombresRef.doc(nuevoCodigo);
     const anteriorRef = codigoAnterior ? nombresRef.doc(codigoAnterior) : null;
-    const codigoActivoRef = datos.codigoReferidoActivo
-      ? db.collection("codigosReferido").doc(datos.codigoReferidoActivo)
-      : null;
+    // El código temporal antiguo no se modifica aquí porque las reglas de
+    // Firestore no permiten que su propietario edite ese documento. Al
+    // quitar el puntero de la cuenta, el código deja de ser el activo y
+    // conserva su expiración normal.
     return Promise.all([
       transaccion.get(nuevoRef),
-      anteriorRef && codigoAnterior !== nuevoCodigo ? transaccion.get(anteriorRef) : Promise.resolve(null),
-      codigoActivoRef ? transaccion.get(codigoActivoRef) : Promise.resolve(null)
-    ]).then(([nombreExistente, anterior, codigoActivo]) => {
+      anteriorRef && codigoAnterior !== nuevoCodigo ? transaccion.get(anteriorRef) : Promise.resolve(null)
+    ]).then(([nombreExistente, anterior]) => {
       if (nombreExistente.exists && nombreExistente.data().uid !== usuario.uid) {
         throw new Error("Ese nombre de usuario ya está ocupado.");
       }
       transaccion.set(nuevoRef, { uid: usuario.uid, nombre: nombreNuevo.trim(), actualizadoEn: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
       if (anteriorRef && codigoAnterior !== nuevoCodigo) transaccion.delete(anteriorRef);
-      if (codigoActivoRef && codigoActivo.exists && codigoActivo.data().uid === usuario.uid && !codigoActivo.data().usado) {
-        transaccion.update(codigoActivoRef, {
-          expiraEn: firebase.firestore.Timestamp.fromDate(new Date()),
-          invalidadoPorCambioNombre: true
-        });
-      }
       transaccion.set(usuarioRef, {
         nombreUsuario: nuevoCodigo,
         codigoReferido: nuevoCodigo,
@@ -788,11 +868,11 @@ function mostrarAjustes(usuario) {
   const acciones = document.createElement("div");
   acciones.className = "acciones-ajustes";
 
-  // "Cambiar imagen de perfil" es una etiqueta (label) ligada a un input de archivo oculto:
-  // al tocarla se abre el selector de imágenes del teléfono.
-  const etiquetaFoto = document.createElement("label");
+  // Al tocar "Cambiar imagen de perfil" se muestran las dos alternativas:
+  // elegir una imagen incluida en el sitio o cargar un archivo personal.
+  const etiquetaFoto = document.createElement("button");
   etiquetaFoto.className = "boton-secundario selector-foto";
-  etiquetaFoto.htmlFor = "input-foto-perfil";
+  etiquetaFoto.type = "button";
   etiquetaFoto.textContent = "Cambiar imagen de perfil";
 
   const inputFoto = document.createElement("input");
@@ -800,6 +880,78 @@ function mostrarAjustes(usuario) {
   inputFoto.type = "file";
   inputFoto.accept = "image/*";
   inputFoto.className = "oculto";
+
+  const opcionesFoto = document.createElement("div");
+  opcionesFoto.className = "selector-opciones-foto oculto";
+  opcionesFoto.setAttribute("role", "dialog");
+  opcionesFoto.setAttribute("aria-modal", "true");
+  opcionesFoto.setAttribute("aria-label", "Elegir imagen de perfil");
+  const contenidoOpcionesFoto = document.createElement("div");
+  contenidoOpcionesFoto.className = "contenido-opciones-foto";
+  const ayudaFoto = document.createElement("p");
+  ayudaFoto.className = "texto-ayuda";
+  ayudaFoto.textContent = "¿Cómo quieres cambiarla?";
+  const botonesFoto = document.createElement("div");
+  botonesFoto.className = "botones-opciones-foto";
+  const botonImagenSitio = document.createElement("button");
+  botonImagenSitio.className = "boton-secundario";
+  botonImagenSitio.type = "button";
+  botonImagenSitio.textContent = "Elegir una imagen del sitio";
+  const botonCargarArchivo = document.createElement("button");
+  botonCargarArchivo.className = "boton-secundario";
+  botonCargarArchivo.type = "button";
+  botonCargarArchivo.textContent = "Cargar una imagen de mis archivos";
+  const rejillaFotos = document.createElement("div");
+  rejillaFotos.className = "rejilla-fotos-perfil oculto";
+
+  function guardarFotoElegida(url) {
+    estadoAcciones.textContent = "Guardando foto...";
+    Promise.all([
+      db.collection("usuarios").doc(usuario.uid).set({ fotoPerfil: url }, { merge: true }),
+      db.collection("perfilesPublicos").doc(usuario.uid).set({
+        fotoPerfil: url,
+        actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true })
+    ]).then(() => {
+      fotoPerfil.src = url;
+      estadoAcciones.textContent = "Foto de perfil actualizada.";
+      rejillaFotos.classList.add("oculto");
+      opcionesFoto.classList.add("oculto");
+    }).catch((error) => {
+      console.error("Error al guardar foto de perfil:", error.message);
+      estadoAcciones.textContent = "No se pudo actualizar la foto. Intenta de nuevo.";
+    });
+  }
+
+  cargarImagenesPerfilSitio().then((imagenes) => {
+    rejillaFotos.innerHTML = "";
+    imagenes.forEach((imagen) => {
+      const opcion = document.createElement("button");
+      opcion.type = "button";
+      opcion.className = "opcion-foto-perfil";
+      opcion.title = imagen.nombre;
+      opcion.setAttribute("aria-label", "Usar imagen " + imagen.nombre);
+      const miniatura = document.createElement("img");
+      miniatura.src = imagen.url;
+      miniatura.alt = "";
+      miniatura.loading = "lazy";
+      opcion.appendChild(miniatura);
+      opcion.addEventListener("click", () => guardarFotoElegida(imagen.url));
+      rejillaFotos.appendChild(opcion);
+    });
+  });
+  botonesFoto.append(botonImagenSitio, botonCargarArchivo);
+  contenidoOpcionesFoto.append(ayudaFoto, botonesFoto, rejillaFotos);
+  opcionesFoto.appendChild(contenidoOpcionesFoto);
+  etiquetaFoto.addEventListener("click", () => {
+    opcionesFoto.classList.toggle("oculto");
+    rejillaFotos.classList.add("oculto");
+  });
+  botonImagenSitio.addEventListener("click", () => rejillaFotos.classList.toggle("oculto"));
+  botonCargarArchivo.addEventListener("click", () => inputFoto.click());
+  opcionesFoto.addEventListener("click", (evento) => {
+    if (evento.target === opcionesFoto) opcionesFoto.classList.add("oculto");
+  });
 
   // Párrafo donde se muestran mensajes ("Subiendo foto...", "Enlace copiado.", etc.)
   const estadoAcciones = document.createElement("p");
@@ -921,7 +1073,7 @@ function mostrarAjustes(usuario) {
     });
   });
 
-  acciones.append(etiquetaFoto, inputFoto, botonPortada, bloqueReferido, botonCopiar, selectorPortada, estadoAcciones);
+  acciones.append(etiquetaFoto, inputFoto, opcionesFoto, botonPortada, bloqueReferido, botonCopiar, selectorPortada, estadoAcciones);
 
   // --- Botón "Más información de mi cuenta" ---
   // Los datos privados quedan escondidos hasta que se toque este botón.
@@ -1029,6 +1181,84 @@ function mostrarArticulos(lista, articulos, vacio, categoria) {
 }
 
 // ---------------------------------------------------------------
+// "Mis cositas" plegable: en vez de mostrar todos los tazos de golpe,
+// se ve UN solo botón con la carátula de la colección de tazos de
+// Dragon Ball. Al tocarlo se despliegan todos los tazos (la grilla de
+// siempre) y al volver a tocarlo se pliegan.
+// ---------------------------------------------------------------
+// Si algún día quieres una foto fija como carátula, pon aquí su ruta
+// (ej: "assets/img/caratula-tazos.jpg"). Vacío = se arma sola con
+// los primeros tazos del usuario.
+const PORTADA_TAZOS_URL = "";
+const TITULO_PORTADA_TAZOS = "Tazos Dragon Ball";
+let coleccionDesplegada = false; // se recuerda si se vuelve a pintar el muro
+
+function mostrarColeccionPlegable(lista, articulos, vacio, categoria) {
+  // Primero se crean todas las tarjetas de tazos como siempre.
+  mostrarArticulos(lista, articulos, vacio, categoria);
+  // Si no hay nada, queda el mensaje "Aún no hay coleccionables públicos."
+  if (!articulos.length) return;
+
+  lista.classList.add("coleccion-plegable");
+
+  const elemento = document.createElement("li");
+  elemento.className = "portada-coleccion";
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.className = "boton-articulo-muro boton-portada-coleccion";
+
+  // Carátula: una foto fija o, si no hay, un abanico con 3 tazos del usuario.
+  const caratula = document.createElement("div");
+  caratula.className = "caratula-tazos";
+  if (PORTADA_TAZOS_URL) {
+    const foto = document.createElement("img");
+    foto.src = PORTADA_TAZOS_URL;
+    foto.alt = "";
+    caratula.appendChild(foto);
+  } else {
+    articulos.slice(0, 3).forEach((articulo) => {
+      const tazo = document.createElement("img");
+      tazo.src = obtenerImagenArticulo(articulo);
+      tazo.alt = "";
+      caratula.appendChild(tazo);
+    });
+  }
+
+  const textos = document.createElement("div");
+  textos.className = "textos-portada-coleccion";
+  const titulo = document.createElement("strong");
+  titulo.textContent = TITULO_PORTADA_TAZOS;
+  const cantidad = document.createElement("span");
+  cantidad.textContent = articulos.length + (articulos.length === 1 ? " tazo coleccionado" : " tazos coleccionados");
+  const indicador = document.createElement("span");
+  indicador.className = "indicador-portada-coleccion";
+
+  textos.append(titulo, cantidad, indicador);
+  const logoSabritas = document.createElement("img");
+  logoSabritas.className = "logo-sabritas-coleccion";
+  logoSabritas.src = "assets/img/sabritas-smiley.webp";
+  logoSabritas.alt = "";
+  logoSabritas.setAttribute("aria-hidden", "true");
+  logoSabritas.decoding = "async";
+
+  boton.append(caratula, textos, logoSabritas);
+  elemento.appendChild(boton);
+  lista.insertBefore(elemento, lista.firstChild);
+
+  function aplicarEstado() {
+    lista.classList.toggle("coleccion-cerrada", !coleccionDesplegada);
+    boton.setAttribute("aria-expanded", coleccionDesplegada ? "true" : "false");
+    boton.setAttribute("aria-label", (coleccionDesplegada ? "Cerrar " : "Abrir ") + TITULO_PORTADA_TAZOS);
+    indicador.textContent = coleccionDesplegada ? "Cerrar ▴" : "Abrir ▾";
+  }
+  boton.addEventListener("click", () => {
+    coleccionDesplegada = !coleccionDesplegada;
+    aplicarEstado();
+  });
+  aplicarEstado();
+}
+
+// ---------------------------------------------------------------
 // Exhibidor: 3 casillas FIJAS (izquierda, centro y derecha) donde el
 // dueño del perfil pone los tazos (u otros coleccionables) que quiere
 // lucir arriba de "Mis cositas". Cada casilla es independiente: el
@@ -1050,6 +1280,9 @@ let uidDuenoPerfil = null;
 // Es true cuando el dueño apretó el engranaje y quiere ver los botones Cambiar y Quitar.
 // Por defecto está apagado para que la página se vea limpia.
 let modoEdicionExhibidor = false;
+// Es true cuando el exhibidor guardado en Firestore tenía tazos que el usuario ya no posee.
+// Si quien mira es el dueño, se limpia también en Firestore (ver cargarPerfil).
+let exhibidorDesactualizado = false;
 
 // Crea una "clave" de texto para reconocer si dos artículos son el mismo (id | nombre | número).
 const claveArticulo = (a) => [a && a.id, a && a.nombre, a && a.numero].map((x) => x || "").join("|");
@@ -1077,12 +1310,44 @@ function copiaParaExhibidor(articulo) {
   // Objeto nuevo donde se guardan solo los campos que importan.
   const copia = {};
   // Recorre cada campo permitido y lo copia solo si tiene un valor real.
-  ["id", "nombre", "numero", "tipo", "imagen", "imagenTrasera", "origenProductoNombre"].forEach((campo) => {
+  ["id", "nombre", "numero", "tipo", "imagen", "imagenTrasera", "origenProductoNombre", "estilo"].forEach((campo) => {
     if (articulo[campo] !== undefined && articulo[campo] !== null && articulo[campo] !== "") copia[campo] = articulo[campo];
   });
   // Si el artículo no tenía nombre, le ponemos uno genérico.
   if (!copia.nombre) copia.nombre = "Artículo";
   return copia;
+}
+
+// Revisa que cada tazo del exhibidor siga estando en la colección del usuario.
+// Si el usuario ya no tiene un tazo (lo vendió, lo intercambió, lo publicó en
+// Intercambios, el administrador vació su colección, etc.), esa casilla queda vacía.
+// Devuelve la lista de 3 casillas ya corregida y si hubo algún cambio.
+function conciliarExhibidorConColeccion(casillas, coleccion) {
+  // Cuántas copias de cada artículo tiene realmente el usuario en su colección.
+  const disponibles = {};
+  coleccion.forEach((articulo) => {
+    // La "clave" identifica al artículo (id | nombre | número).
+    const clave = claveArticulo(articulo);
+    disponibles[clave] = (disponibles[clave] || 0) + 1;
+  });
+  // Marca si alguna casilla tuvo que vaciarse.
+  let huboCambios = false;
+  // Recorre las 3 casillas en orden y conserva solo las que todavía se poseen.
+  const conciliadas = casillas.map((articulo) => {
+    // Una casilla vacía sigue vacía.
+    if (!articulo) return null;
+    const clave = claveArticulo(articulo);
+    // Si queda al menos una copia disponible, el tazo se queda y se gasta esa copia
+    // (así, si hay 2 casillas con el mismo tazo, hacen falta 2 copias).
+    if (disponibles[clave] > 0) {
+      disponibles[clave] -= 1;
+      return articulo;
+    }
+    // Si ya no lo tiene, la casilla se vacía.
+    huboCambios = true;
+    return null;
+  });
+  return { conciliadas, huboCambios };
 }
 
 // Convierte lo que viene guardado en Firestore en una lista de exactamente 3 casillas.
@@ -1112,6 +1377,111 @@ function guardarExhibidor(nuevo) {
   });
 }
 
+// ---------------------------------------------------------------
+// Formas de exhibir un tazo ("skins" del exhibidor).
+// El dueño elige una con el botón "Modificar" y queda guardada en el
+// propio tazo del exhibidor (campo "estilo"). Todos los visitantes la ven.
+// Para agregar un efecto nuevo: 1) súmalo a esta lista, 2) agrega su
+// bloque en crearEscenarioTazo y 3) escribe su CSS (sección 20 de style.css).
+// ---------------------------------------------------------------
+const ESTILOS_EXHIBIDOR = [
+  // "ninguno" = el tazo se ve como siempre, sin efectos.
+  { id: "ninguno", nombre: "Normal" },
+  // Resplandor azul y violeta que respira alrededor del tazo.
+  { id: "aura", nombre: "Aura" },
+  // Llamas doradas y halo amarillo, como la transformación Super Saiyajin.
+  { id: "saiyajin", nombre: "Super Saiyajin" },
+  // Rayos eléctricos que parpadean sobre un cielo de tormenta.
+  { id: "truenos", nombre: "Truenos" },
+  // El tazo sentado sobre un trono real.
+  { id: "trono", nombre: "En un trono" },
+  // Barrido de luz y chispas que titilan.
+  { id: "brillo", nombre: "Brillo" }
+];
+
+// Devuelve el id del estilo si existe en la lista; si no, "ninguno".
+// Así un valor raro o antiguo guardado en Firestore nunca rompe la página.
+function estiloExhibidorValido(id) {
+  return ESTILOS_EXHIBIDOR.some((e) => e.id === id) ? id : "ninguno";
+}
+
+// Construye el "escenario" de un tazo: una caja cuadrada con el fondo y los
+// efectos del estilo elegido, y la imagen del tazo encima.
+// Se usa en la tarjeta del exhibidor, en la vista previa y en las miniaturas.
+// Todo el tamaño de los efectos va en porcentajes, así sirve para cualquier tamaño.
+function crearEscenarioTazo(src, alt, estilo) {
+  // Caja contenedora: la clase "escenario-<estilo>" activa el CSS de ese estilo.
+  const escenario = document.createElement("div");
+  escenario.className = "escenario-tazo escenario-" + estilo;
+
+  // Capas decorativas que van DETRÁS del tazo (se escriben como HTML fijo, sin datos del usuario).
+  let capasDetras = "";
+  // Capas decorativas que van ENCIMA del tazo.
+  let capasDelante = "";
+
+  if (estilo === "aura") {
+    // Un aro luminoso que pulsa y otro que gira.
+    capasDetras = '<span class="fx fx-aura"></span><span class="fx fx-aura-anillo"></span>';
+  } else if (estilo === "saiyajin") {
+    // Halo amarillo + 5 llamas que parpadean + 3 chispas que suben.
+    capasDetras =
+      '<span class="fx fx-halo"></span>' +
+      '<span class="fx fx-llama l1"></span><span class="fx fx-llama l2"></span>' +
+      '<span class="fx fx-llama l3"></span><span class="fx fx-llama l4"></span>' +
+      '<span class="fx fx-llama l5"></span>';
+    capasDelante = '<span class="fx fx-ascua a1"></span><span class="fx fx-ascua a2"></span><span class="fx fx-ascua a3"></span>';
+  } else if (estilo === "truenos") {
+    // Cuatro rayos (uno por esquina) dibujados con un polígono SVG, más un anillo eléctrico.
+    const rayo = '<svg class="fx fx-rayo" viewBox="0 0 100 100" aria-hidden="true"><polygon points="58,0 22,52 46,52 32,100 80,40 54,40 74,0"></polygon></svg>';
+    capasDetras =
+      '<span class="fx fx-anillo-electrico"></span>' +
+      rayo.replace('class="fx fx-rayo"', 'class="fx fx-rayo r1"') +
+      rayo.replace('class="fx fx-rayo"', 'class="fx fx-rayo r2"') +
+      rayo.replace('class="fx fx-rayo"', 'class="fx fx-rayo r3"') +
+      rayo.replace('class="fx fx-rayo"', 'class="fx fx-rayo r4"');
+    // Un destello blanco muy corto que simula el relámpago.
+    capasDelante = '<span class="fx fx-relampago"></span>';
+  } else if (estilo === "trono") {
+    // Trono dibujado en SVG: respaldo con arco, apoyabrazos, asiento y base.
+    capasDetras =
+      '<svg class="fx fx-trono" viewBox="0 0 100 100" aria-hidden="true">' +
+      '<defs>' +
+      '<linearGradient id="tr-terciopelo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a2133"/><stop offset="1" stop-color="#561019"/></linearGradient>' +
+      '<linearGradient id="tr-oro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe08f"/><stop offset="1" stop-color="#c88a22"/></linearGradient>' +
+      '</defs>' +
+      // Respaldo alto con la parte de arriba en arco.
+      '<path d="M20 94 L20 24 Q20 6 50 4 Q80 6 80 24 L80 94 Z" fill="url(#tr-terciopelo)" stroke="#e6b94a" stroke-width="2"/>' +
+      // Panel interior del respaldo.
+      '<path d="M28 90 L28 26 Q28 14 50 12 Q72 14 72 26 L72 90 Z" fill="#7a1726" stroke="#e6b94a" stroke-width="1" opacity="0.9"/>' +
+      // Joya dorada arriba del respaldo.
+      '<circle cx="50" cy="5" r="3.4" fill="url(#tr-oro)" stroke="#8a5e10" stroke-width="0.8"/>' +
+      // Apoyabrazos izquierdo y derecho.
+      '<rect x="9" y="58" width="13" height="36" rx="4" fill="url(#tr-terciopelo)" stroke="#e6b94a" stroke-width="1.6"/>' +
+      '<rect x="78" y="58" width="13" height="36" rx="4" fill="url(#tr-terciopelo)" stroke="#e6b94a" stroke-width="1.6"/>' +
+      '<circle cx="15.5" cy="58" r="4" fill="url(#tr-oro)"/><circle cx="84.5" cy="58" r="4" fill="url(#tr-oro)"/>' +
+      // Asiento dorado y base oscura.
+      '<rect x="16" y="82" width="68" height="10" rx="3" fill="url(#tr-oro)" stroke="#8a5e10" stroke-width="1"/>' +
+      '<rect x="12" y="92" width="76" height="8" rx="2" fill="#3a2a14"/>' +
+      '</svg>';
+  } else if (estilo === "brillo") {
+    // Chispas con forma de estrella de 4 puntas.
+    capasDelante =
+      '<span class="fx fx-barrido-circulo"><span class="fx-barrido"></span></span>' +
+      '<span class="fx fx-chispa c1"></span><span class="fx fx-chispa c2"></span>' +
+      '<span class="fx fx-chispa c3"></span><span class="fx fx-chispa c4"></span>';
+  }
+
+  // Primero las capas de atrás, luego el tazo, luego las de adelante.
+  escenario.insertAdjacentHTML("beforeend", capasDetras);
+  const imagen = document.createElement("img");
+  imagen.src = src;
+  imagen.alt = alt || "Tazo";
+  imagen.loading = "lazy";
+  escenario.appendChild(imagen);
+  escenario.insertAdjacentHTML("beforeend", capasDelante);
+  return escenario;
+}
+
 // Dibuja las 3 casillas del exhibidor.
 function pintarExhibidor() {
   // Limpia lo que hubiera dibujado antes.
@@ -1125,11 +1495,10 @@ function pintarExhibidor() {
   // Si hay algo que mostrar (o es el dueño), la sección se ve.
   seccionExhibidor.classList.remove("oculto");
 
-  // El engranaje solo lo ve el dueño y solo tiene sentido si hay al menos un tazo para editar.
-  const hayTazos = exhibidorPerfil.some(Boolean);
-  // Si ya no quedan tazos, apagamos el modo edición (no hay nada que cambiar o quitar).
-  if (!hayTazos) modoEdicionExhibidor = false;
-  botonAjustesExhibidor.classList.toggle("oculto", !(esDuenoPerfil && hayTazos));
+  // El engranaje lo ve siempre el dueño: es la única forma de agregar, cambiar o quitar tazos.
+  // Si quien mira no es el dueño, el modo edición queda apagado.
+  if (!esDuenoPerfil) modoEdicionExhibidor = false;
+  botonAjustesExhibidor.classList.toggle("oculto", !esDuenoPerfil);
   // Marca el botón como "activo" (presionado) mientras el modo edición está encendido.
   botonAjustesExhibidor.classList.toggle("activo", modoEdicionExhibidor);
   botonAjustesExhibidor.setAttribute("aria-pressed", String(modoEdicionExhibidor));
@@ -1144,6 +1513,16 @@ function pintarExhibidor() {
       // Tomamos la tarjeta (el <li>) ya dibujada.
       const tarjeta = temporal.firstElementChild;
 
+      // Si el dueño eligió una forma de exhibir este tazo (botón "Modificar"), cambiamos
+      // la imagen simple por el escenario con efectos. Lo ven el dueño y todos los visitantes.
+      const estiloGuardado = estiloExhibidorValido(articulo.estilo);
+      if (estiloGuardado !== "ninguno") {
+        // Imagen que dibujó mostrarArticulos dentro de la tarjeta.
+        const imagenOriginal = tarjeta.querySelector("img");
+        // Se reemplaza por el escenario (que trae su propia imagen del mismo tazo).
+        if (imagenOriginal) imagenOriginal.replaceWith(crearEscenarioTazo(imagenOriginal.src, imagenOriginal.alt, estiloGuardado));
+      }
+
       // Solo el dueño, y solo con el modo edición encendido (engranaje), ve los botones para cambiar o quitar.
       if (esDuenoPerfil && modoEdicionExhibidor) {
         const acciones = document.createElement("div");
@@ -1153,15 +1532,27 @@ function pintarExhibidor() {
         const cambiar = document.createElement("button");
         cambiar.type = "button";
         cambiar.className = "boton-mini-exhibidor";
-        cambiar.textContent = "Cambiar";
+        cambiar.textContent = "\u21C4\uFE0E";
+        cambiar.title = "Cambiar";
         cambiar.setAttribute("aria-label", "Cambiar el tazo de esta casilla");
         cambiar.addEventListener("click", () => abrirSelectorExhibidor(posicion));
+
+        // Botón "Modificar": va justo debajo de "Cambiar" y abre la ventana para elegir
+        // la forma de exhibir este tazo (aura, Super Saiyajin, truenos, trono, brillo...).
+        const modificar = document.createElement("button");
+        modificar.type = "button";
+        modificar.className = "boton-mini-exhibidor boton-mini-modificar";
+        modificar.textContent = "\u270E\uFE0E";
+        modificar.title = "Modificar";
+        modificar.setAttribute("aria-label", "Modificar la forma de exhibir el tazo de esta casilla");
+        modificar.addEventListener("click", () => abrirModalEstiloExhibidor(posicion));
 
         // Botón "Quitar": deja vacía SOLO esta casilla (las otras no se mueven).
         const quitar = document.createElement("button");
         quitar.type = "button";
         quitar.className = "boton-mini-exhibidor boton-mini-quitar";
-        quitar.textContent = "Quitar";
+        quitar.textContent = "\u2715\uFE0E";
+        quitar.title = "Quitar";
         quitar.setAttribute("aria-label", "Quitar el tazo de esta casilla");
         quitar.addEventListener("click", () => {
           // Evita doble clic mientras se guarda.
@@ -1176,21 +1567,31 @@ function pintarExhibidor() {
           });
         });
 
-        acciones.append(cambiar, quitar);
+        // Orden de arriba hacia abajo: Cambiar, Modificar, Quitar.
+        acciones.append(cambiar, modificar, quitar);
         tarjeta.appendChild(acciones);
       }
       muroExhibidor.appendChild(tarjeta);
     } else if (esDuenoPerfil) {
       // --- Casilla vacía (solo la ve el dueño) ---
+      // Con el modo edición apagado se ve translúcida, solo como sugerencia, y no se puede usar.
+      // Con el modo edición encendido (engranaje) queda activa para agregar un tazo.
       const hueco = document.createElement("li");
-      hueco.className = "hueco-exhibidor";
+      hueco.className = "hueco-exhibidor" + (modoEdicionExhibidor ? "" : " hueco-sugerido");
       const boton = document.createElement("button");
       boton.type = "button";
       boton.className = "boton-hueco-exhibidor";
       boton.setAttribute("aria-label", "Agregar un tazo en esta casilla del exhibidor");
       boton.innerHTML = '<span aria-hidden="true">+</span><small>Agregar tazo</small>';
-      // Al hacer clic se abre el selector para ESTA casilla exacta.
-      boton.addEventListener("click", () => abrirSelectorExhibidor(posicion));
+      if (modoEdicionExhibidor) {
+        // Al hacer clic se abre el selector para ESTA casilla exacta.
+        boton.addEventListener("click", () => abrirSelectorExhibidor(posicion));
+      } else {
+        // Modo edición apagado: solo sugerencia visual, sin acción ni foco.
+        boton.disabled = true;
+        boton.tabIndex = -1;
+        boton.setAttribute("aria-hidden", "true");
+      }
       hueco.appendChild(boton);
       muroExhibidor.appendChild(hueco);
     }
@@ -1282,6 +1683,9 @@ function abrirSelectorExhibidor(posicion) {
       // Copia de las casillas con el tazo nuevo SOLO en esta posición.
       const nuevo = exhibidorPerfil.slice();
       nuevo[posicion] = copiaParaExhibidor(articulo);
+      // Si la casilla ya tenía una forma de exhibir elegida, el tazo nuevo la conserva.
+      const estiloPrevio = exhibidorPerfil[posicion] && exhibidorPerfil[posicion].estilo;
+      if (estiloPrevio && estiloPrevio !== "ninguno") nuevo[posicion].estilo = estiloPrevio;
       guardarExhibidor(nuevo).then(() => {
         modal.remove();
       }).catch((error) => {
@@ -1314,6 +1718,143 @@ function abrirSelectorExhibidor(posicion) {
   cancelar.focus();
 }
 
+// Ventana "Modificar": muestra el tazo en grande y las formas de exhibirlo.
+// Al tocar una forma se ve al instante en la vista previa; "Guardar" la deja fija.
+function abrirModalEstiloExhibidor(posicion) {
+  // Solo el dueño del perfil puede editar, y la casilla debe tener un tazo.
+  if (!esDuenoPerfil || !uidDuenoPerfil) return;
+  const articulo = exhibidorPerfil[posicion];
+  if (!articulo) return;
+  // Si había otra ventana abierta, la cerramos.
+  const modalAnterior = document.querySelector(".modal-detalle-articulo");
+  if (modalAnterior) modalAnterior.remove();
+
+  // Estilo que está elegido en este momento (parte con el que ya tenía guardado).
+  let estiloElegido = estiloExhibidorValido(articulo.estilo);
+  // Imagen y nombre del tazo para dibujarlo en la vista previa y las miniaturas.
+  const srcTazo = obtenerImagenArticulo(articulo);
+  const nombreTazo = articulo.nombre || "Tazo";
+
+  // Fondo oscuro de la ventana emergente.
+  const modal = document.createElement("div");
+  modal.className = "modal-detalle-articulo";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "titulo-modificar-exhibidor");
+
+  // Contenido de la ventana.
+  const contenido = document.createElement("article");
+  contenido.className = "detalle-articulo editor-exhibidor editor-estilo-exhibidor";
+
+  // Título y nombre del tazo que se está modificando.
+  const titulo = document.createElement("h2");
+  titulo.id = "titulo-modificar-exhibidor";
+  titulo.textContent = "Modificar exhibición";
+  const ayuda = document.createElement("p");
+  ayuda.className = "texto-ayuda";
+  ayuda.textContent = nombreTazo + ": elige cómo quieres lucirlo.";
+
+  // Contenedor de la vista previa grande.
+  const vistaPrevia = document.createElement("div");
+  vistaPrevia.className = "vista-previa-estilo";
+
+  // Rejilla con una miniatura por cada forma de exhibir.
+  const rejilla = document.createElement("div");
+  rejilla.className = "rejilla-estilos-exhibidor";
+  rejilla.setAttribute("role", "radiogroup");
+  rejilla.setAttribute("aria-label", "Formas de exhibir el tazo");
+
+  // Párrafo para mensajes ("Guardando...", errores).
+  const estado = document.createElement("p");
+  estado.className = "texto-ayuda";
+
+  // Dibuja de nuevo la vista previa con el estilo elegido.
+  function pintarVistaPrevia() {
+    vistaPrevia.innerHTML = "";
+    vistaPrevia.appendChild(crearEscenarioTazo(srcTazo, nombreTazo, estiloElegido));
+  }
+
+  // Marca visualmente cuál opción está elegida.
+  function marcarOpciones() {
+    rejilla.querySelectorAll(".opcion-estilo").forEach((boton) => {
+      const activa = boton.dataset.estilo === estiloElegido;
+      boton.classList.toggle("elegida", activa);
+      boton.setAttribute("aria-checked", String(activa));
+    });
+  }
+
+  // Un botón por cada forma de exhibir.
+  ESTILOS_EXHIBIDOR.forEach((estilo) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "opcion-estilo";
+    boton.dataset.estilo = estilo.id;
+    boton.setAttribute("role", "radio");
+    // Miniatura: el mismo escenario, pero pequeño.
+    const miniatura = document.createElement("div");
+    miniatura.className = "miniatura-estilo";
+    miniatura.appendChild(crearEscenarioTazo(srcTazo, nombreTazo, estilo.id));
+    // Nombre del estilo debajo de la miniatura.
+    const etiqueta = document.createElement("span");
+    etiqueta.textContent = estilo.nombre;
+    boton.append(miniatura, etiqueta);
+    // Al tocar la opción se actualiza la vista previa (todavía no se guarda).
+    boton.addEventListener("click", () => {
+      estiloElegido = estilo.id;
+      estado.textContent = "";
+      pintarVistaPrevia();
+      marcarOpciones();
+    });
+    rejilla.appendChild(boton);
+  });
+
+  // Botones de abajo: Guardar y Cancelar.
+  const acciones = document.createElement("div");
+  acciones.className = "acciones-exhibidor";
+
+  const guardar = document.createElement("button");
+  guardar.type = "button";
+  guardar.className = "boton-comprar";
+  guardar.textContent = "Guardar";
+  guardar.addEventListener("click", () => {
+    // Evita doble clic mientras se guarda.
+    guardar.disabled = true;
+    estado.textContent = "Guardando...";
+    // Copia de las casillas con el estilo nuevo SOLO en esta posición.
+    const nuevo = exhibidorPerfil.slice();
+    const copia = Object.assign({}, nuevo[posicion]);
+    // "Normal" no se guarda como campo (Firestore no acepta "undefined", así que se borra).
+    if (estiloElegido === "ninguno") delete copia.estilo; else copia.estilo = estiloElegido;
+    nuevo[posicion] = copia;
+    guardarExhibidor(nuevo).then(() => {
+      modal.remove();
+    }).catch((error) => {
+      console.error("Error al guardar la forma de exhibir:", error.message);
+      estado.textContent = "No se pudo guardar. Intenta de nuevo.";
+      guardar.disabled = false;
+    });
+  });
+
+  const cancelar = document.createElement("button");
+  cancelar.type = "button";
+  cancelar.className = "boton-secundario";
+  cancelar.textContent = "Cancelar";
+  cancelar.addEventListener("click", () => modal.remove());
+
+  // Arma la ventana y la muestra.
+  acciones.append(guardar, cancelar);
+  contenido.append(titulo, ayuda, vistaPrevia, rejilla, estado, acciones);
+  modal.appendChild(contenido);
+  // Clic en el fondo oscuro también cierra la ventana.
+  modal.addEventListener("click", (evento) => {
+    if (evento.target === modal) modal.remove();
+  });
+  document.body.appendChild(modal);
+  pintarVistaPrevia();
+  marcarOpciones();
+  guardar.focus();
+}
+
 // Al apretar el engranaje se enciende o apaga el modo edición del exhibidor y se vuelve a dibujar.
 botonAjustesExhibidor.addEventListener("click", () => {
   modoEdicionExhibidor = !modoEdicionExhibidor;
@@ -1322,16 +1863,20 @@ botonAjustesExhibidor.addEventListener("click", () => {
 
 function mostrarPerfil(perfil) {
   const nombre = perfil.nombreUsuario || perfil.nombre || "Usuario";
-  tituloPerfil.textContent = nombre;
+  if (nombrePerfilHeader) nombrePerfilHeader.textContent = nombre;
   nombrePerfil.textContent = nombre;
   fotoPerfil.src = perfil.fotoPerfil || avatarPredeterminado(nombre);
   fotoPerfil.alt = "Foto de perfil de " + nombre;
   fotoPerfil.onerror = () => { fotoPerfil.src = avatarPredeterminado(nombre); };
   aplicarFondoMuro(perfil.fondoMuro);
   coleccionPerfil = quitarPaquetesAbiertos(Array.isArray(perfil.coleccionables) ? perfil.coleccionables : []);
-  exhibidorPerfil = normalizarExhibidor(perfil.exhibidor);
+  // Lo guardado en el exhibidor se compara con la colección real: los tazos que el
+  // usuario ya no tiene salen del exhibidor (para el dueño y para todos los visitantes).
+  const resultadoConciliado = conciliarExhibidorConColeccion(normalizarExhibidor(perfil.exhibidor), coleccionPerfil);
+  exhibidorPerfil = resultadoConciliado.conciliadas;
+  exhibidorDesactualizado = resultadoConciliado.huboCambios;
   pintarExhibidor();
-  mostrarArticulos(muroColeccionables, coleccionPerfil, "Aún no hay coleccionables públicos.", "Coleccionable");
+  mostrarColeccionPlegable(muroColeccionables, coleccionPerfil, "Aún no hay coleccionables públicos.", "Coleccionable");
   estadoPerfil.textContent = "";
   cabeceraPerfil.classList.remove("oculto");
 }
@@ -1394,6 +1939,14 @@ function cargarPerfil(uid, usuarioActual) {
     if (usuarioActual && usuarioActual.uid === uid) {
       esDuenoPerfil = true;
       uidDuenoPerfil = uid;
+      // Si el exhibidor tenía tazos que ya no están en la colección, el dueño deja
+      // guardada la versión limpia en Firestore (los visitantes no pueden escribir).
+      if (exhibidorDesactualizado) {
+        exhibidorDesactualizado = false;
+        guardarExhibidor(exhibidorPerfil).catch((error) => {
+          console.error("No se pudo limpiar el exhibidor:", error.message);
+        });
+      }
       pintarExhibidor();
       linkInventarioPrivado.href = "coleccion.html?uid=" + encodeURIComponent(uid);
       linkInventarioPrivado.classList.remove("oculto");
@@ -1407,6 +1960,7 @@ function cargarPerfil(uid, usuarioActual) {
 }
 
 auth.onAuthStateChanged((usuario) => {
+  configurarBarraPrincipal(usuario);
   const uidObjetivo = uidPerfil || (usuario && usuario.uid);
   if (!uidObjetivo) {
     estadoPerfil.textContent = "Inicia sesión para crear tu perfil.";

@@ -17,6 +17,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const FV = firebase.firestore.FieldValue;
+const FUNCIONES_MERCADO_HABILITADAS = false;
 const $ = (id) => document.getElementById(id);
 const estado = $("estado-intercambios");
 let yo = null, misObjetos = [], ofertas = [], recibidas = [], enviadas = [];
@@ -324,12 +325,11 @@ const PESOS_POR_MONEDA = 100;
 const textoPesos = (p) => Number(p).toLocaleString("es-CL") + " pesos";
 const textoPrecio = (v) => {
   const pesos = precioVentaEnPesos(v);
-  const monedas = pesos / PESOS_POR_MONEDA;
-  return textoPesos(pesos) + " (" + monedas.toLocaleString("es-CL", { maximumFractionDigits: 2 }) + " monedas)";
+  return textoPesos(pesos);
 };
 
 function pintarMercado() {
-  $("mis-monedas").textContent = "Tus monedas: " + misMonedas.toLocaleString("es-CL") + " (" + textoPesos(misMonedas * PESOS_POR_MONEDA) + ")";
+  $("mis-monedas").textContent = "Dinero disponible: " + textoPesos(misMonedas * PESOS_POR_MONEDA);
   const puede = misObjetos.length > 0;
   if (vendoElegido && !misObjetos.some((x) => mismo(x, vendoElegido))) { elegirVendo(null); $("input-vendo").value = ""; }
   $("input-vendo").disabled = !puede;
@@ -700,6 +700,11 @@ $("btn-abrir-mercado").addEventListener("click", () => {
 
 auth.onAuthStateChanged((usuario) => {
   if (!usuario) { window.location.href = "index.html"; return; }
+  if (!FUNCIONES_MERCADO_HABILITADAS) {
+    document.body.classList.add("mercado-deshabilitado");
+    estado.textContent = "Los intercambios y las ventas estarán disponibles próximamente.";
+    return;
+  }
   yo = usuario;
   cargarCatalogo();
   recargar();

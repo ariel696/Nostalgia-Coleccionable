@@ -62,6 +62,25 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Los códigos de regalo los crea root. Los usuarios autenticados pueden
+    // leerlos y aumentar el contador únicamente al canjear uno correctamente.
+    match /codigosRegalo/{codigo} {
+      allow read: if signedIn();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        signedIn()
+        && request.resource.data.codigo == resource.data.codigo
+        && request.resource.data.premioPesos == resource.data.premioPesos
+        && request.resource.data.tipoLimite == resource.data.tipoLimite
+        && request.resource.data.maxUsos == resource.data.maxUsos
+        && request.resource.data.expiraEn == resource.data.expiraEn
+        && request.resource.data.creadoEn == resource.data.creadoEn
+        && request.resource.data.creadoPor == resource.data.creadoPor
+        && request.resource.data.activo == resource.data.activo
+        && request.resource.data.usos == resource.data.usos + 1
+      );
+    }
+
     // Una invitación solo puede registrarla la persona invitada, una vez,
     // y el código debe pertenecer a otro usuario real.
     match /referidos/{referidoUid} {
@@ -72,7 +91,14 @@ service cloud.firestore {
         && request.resource.data.referrerUid != request.auth.uid
         && get(/databases/$(database)/documents/codigosReferido/$(request.resource.data.codigo)).data.uid == request.resource.data.referrerUid
         && !exists(/databases/$(database)/documents/referidos/$(referidoUid));
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin();
+      // Si root formateó la cuenta, el usuario puede limpiar únicamente
+      // su registro de invitación huérfano para volver a usar un código.
+      allow delete: if isAdmin() || (
+        signedIn() && request.auth.uid == referidoUid
+        && resource.data.referidoUid == request.auth.uid
+        && !get(/databases/$(database)/documents/usuarios/$(referidoUid)).data.codigoReferidoUsado
+      );
     }
 
     // El catálogo de imágenes se puede consultar desde las páginas públicas,
@@ -82,13 +108,18 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /musicaSitio/{musicaId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
     // Las ofertas abiertas se muestran a usuarios autenticados. El objeto
     // queda depositado en la oferta y solo su propietario puede crearla,
     // cancelarla o cerrarla como parte de un intercambio.
     match /intercambios/{intercambioId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
-      allow update, delete: if signedIn() && (resource.data.ownerUid == request.auth.uid || isAdmin());
+      allow create: if false;
+      allow update, delete: if isAdmin();
     }
 
     // Una propuesta la puede crear quien ofrece el objeto. La pueden leer o
@@ -97,9 +128,7 @@ service cloud.firestore {
     match /propuestasIntercambio/{propuestaId} {
       allow read: if signedIn() &&
         (resource.data.fromUid == request.auth.uid || resource.data.ownerUid == request.auth.uid || isAdmin());
-      allow create: if signedIn() && request.resource.data.fromUid == request.auth.uid;
-      allow update: if signedIn() &&
-        (resource.data.fromUid == request.auth.uid || resource.data.ownerUid == request.auth.uid || isAdmin());
+      allow create, update: if false;
       allow delete: if isAdmin();
     }
 
@@ -108,15 +137,7 @@ service cloud.firestore {
     // la compra o reclamarla según el flujo de la aplicación.
     match /ventas/{ventaId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
-      allow update: if signedIn() &&
-        (resource.data.ownerUid == request.auth.uid ||
-         (
-           resource.data.estado == "abierta" &&
-           request.resource.data.estado == "vendida" &&
-           request.resource.data.compradorUid == request.auth.uid
-         ) ||
-         isAdmin());
+      allow create, update: if false;
       allow delete: if isAdmin();
     }
   }

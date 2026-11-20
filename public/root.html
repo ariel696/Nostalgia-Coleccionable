@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20260925-17">
+    <link rel="stylesheet" href="css/style.css?v=20261119-8">
 </head>
 <body>
     <!--
@@ -22,6 +22,28 @@
     <header>
         <h1>Usuario root</h1>
     </header>
+    <div class="layout-root">
+    <!--
+      Lista de usuarios registrados (lado izquierdo en computador, debajo en celular).
+      La lógica vive en js/registro-root.js y solo se muestra a la cuenta root.
+    -->
+    <aside id="registro-root" class="registro-root oculto" aria-label="Usuarios registrados">
+        <div class="registro-root-cabecera">
+            <h2>Usuarios registrados</h2>
+            <!-- Engranaje: muestra u oculta las herramientas de este bloque. -->
+            <button id="btn-engranaje-root" class="btn-engranaje-root" type="button" aria-label="Ajustes de usuarios" aria-expanded="false" aria-controls="registro-root-ajustes" title="Ajustes">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+        </div>
+        <!-- Panel de ajustes (oculto hasta tocar el engranaje). -->
+        <div id="registro-root-ajustes" class="registro-root-ajustes oculto">
+            <p class="texto-ayuda">Usa los controles que aparecen dentro de cada usuario para administrar sus monedas o formatear sus datos de juego.</p>
+        </div>
+        <p class="registro-root-contador"><strong id="registro-root-total">0</strong> <span>registrados</span></p>
+        <ul id="registro-root-lista" class="registro-root-lista">
+            <li class="texto-ayuda">Cargando usuarios...</li>
+        </ul>
+    </aside>
     <main>
         <a href="index.html" class="link-volver">&larr; Volver al inicio</a>
 
@@ -36,40 +58,119 @@
                 <a href="admin.html">Administrar lugares y productos<span>Agrega o edita tiendas, productos, precios y premios.</span></a>
             </div>
 
-            <section id="info-assets" class="oculto" aria-label="Administrador de assets del sitio">
-                <h2>Mis assets (imágenes del sitio)</h2>
-                <p>Aquí guardas ordenadas las imágenes que usa la página (billetes, monedas, fondos, íconos...). Para usar una en cualquier parte, toca <strong>Copiar enlace</strong>.</p>
-
-                <div class="assets-form">
-                    <label for="assets-archivo">Imagen</label>
-                    <input type="file" id="assets-archivo" accept="image/*">
-                    <label for="assets-nombre">Nombre</label>
-                    <input type="text" id="assets-nombre" maxlength="60" placeholder="Ej: Billete de 1.000 pesos (frente)">
-                    <label for="assets-categoria">Categoría</label>
-                    <select id="assets-categoria"></select>
-                    <button type="button" id="assets-subir" class="boton-comprar">Subir imagen</button>
-                    <p id="assets-estado" class="texto-ayuda"></p>
+            <section id="panel-fotos-perfil-root" class="bloque-admin panel-fotos-perfil-root" aria-labelledby="titulo-fotos-perfil-root">
+                <div class="cabecera-fotos-perfil-root">
+                    <div>
+                        <h2 id="titulo-fotos-perfil-root">Fotos de perfil</h2>
+                        <p class="texto-ayuda">Estas son las imágenes que los usuarios pueden elegir. Las marcadas como temporales son opciones de prueba fáciles de reemplazar después.</p>
+                    </div>
+                    <button id="btn-actualizar-fotos-perfil-root" class="boton-secundario" type="button">Actualizar</button>
                 </div>
-
-                <h3>Mis imágenes <span id="assets-contador"></span></h3>
-                <div class="assets-filtros">
-                    <select id="assets-filtro" aria-label="Filtrar por categoría"></select>
-                    <input type="search" id="assets-buscar" placeholder="Buscar por nombre..." aria-label="Buscar por nombre">
+                <div id="lista-fotos-perfil-root" class="galeria-fotos-perfil-root">
+                    <p class="texto-ayuda">Cargando imágenes...</p>
                 </div>
-                <div id="assets-lista"></div>
-
-                <h3>Imágenes que ya usa el sitio</h3>
-                <p class="texto-ayuda">Se leen solas desde tus tiendas, productos y premios, y desde la carpeta <code>img</code>. Aquí solo las ves y copias su enlace, o las guardas en «Mis imágenes». Para cambiarlas, edítalas en <a href="admin.html">Administrar lugares</a>.</p>
-                <div id="assets-en-uso"></div>
+                <p id="estado-fotos-perfil-root" class="texto-ayuda" aria-live="polite"></p>
             </section>
+
+            <section id="panel-musica-root" class="bloque-admin panel-musica-root" aria-labelledby="titulo-musica-root">
+                <div class="cabecera-musica-root">
+                    <div>
+                        <h2 id="titulo-musica-root">Música de fondo</h2>
+                        <p class="texto-ayuda">Sube MP3, escucha una vista previa y activa una canción para el sitio.</p>
+                    </div>
+                    <span class="etiqueta-musica-root">MP3</span>
+                </div>
+                <div class="form-musica-root">
+                    <label for="input-musica-archivo">Archivo de música</label>
+                    <input id="input-musica-archivo" type="file" accept="audio/mpeg,audio/mp3,.mp3">
+                    <label for="input-musica-nombre">Nombre de la canción</label>
+                    <input id="input-musica-nombre" type="text" maxlength="80" placeholder="Ej.: Música de bienvenida">
+                    <button id="btn-subir-musica-root" class="boton-comprar" type="button">Subir música</button>
+                    <p id="estado-musica-root" class="texto-ayuda"></p>
+                </div>
+                <h3>Música disponible</h3>
+                <div id="lista-musica-root"><p class="texto-ayuda">Cargando música...</p></div>
+            </section>
+
+            <section id="panel-codigos-regalo-root" class="bloque-admin panel-codigos-regalo-compacto" aria-labelledby="titulo-codigos-regalo-root">
+                <div class="cabecera-codigos-regalo-root">
+                    <h2 id="titulo-codigos-regalo-root">Códigos de regalo</h2>
+                    <button id="btn-toggle-codigos-regalo-root" class="btn-toggle-codigos-regalo-root" type="button" aria-expanded="false" aria-controls="contenido-codigos-regalo-root">Abrir</button>
+                </div>
+                <div id="contenido-codigos-regalo-root" class="panel-codigos-regalo-contenido oculto">
+                <p class="texto-ayuda">Crea códigos para publicar en tus redes. Cada cuenta podrá usar cada código una sola vez.</p>
+                <div class="form-codigo-regalo-root">
+                    <label for="input-nuevo-codigo-regalo">Código de regalo</label>
+                    <input id="input-nuevo-codigo-regalo" type="text" maxlength="40" autocomplete="off" placeholder="Ej.: ARBOL 123">
+
+                    <label for="input-monedas-codigo-regalo">Dinero que entregará (pesos)</label>
+                    <input id="input-monedas-codigo-regalo" type="number" min="1" step="1" value="500">
+
+                    <label for="select-limite-codigo-regalo">Tipo de límite</label>
+                    <select id="select-limite-codigo-regalo">
+                        <option value="tiempo">Por tiempo</option>
+                        <option value="usos">Por cantidad de usuarios</option>
+                    </select>
+
+                    <div id="opciones-tiempo-codigo-regalo" class="opciones-codigo-regalo">
+                        <label for="input-duracion-codigo-regalo">Duración</label>
+                        <div class="fila-codigo-regalo">
+                            <input id="input-duracion-codigo-regalo" type="number" min="1" step="1" value="1">
+                            <select id="select-unidad-codigo-regalo" aria-label="Unidad de duración">
+                                <option value="dias">Día(s)</option>
+                                <option value="semanas">Semana(s)</option>
+                                <option value="meses">Mes(es)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="opciones-usos-codigo-regalo" class="opciones-codigo-regalo oculto">
+                        <label for="input-max-usos-codigo-regalo">Máximo de usuarios</label>
+                        <input id="input-max-usos-codigo-regalo" type="number" min="1" step="1" value="5">
+                    </div>
+
+                    <button id="btn-crear-codigo-regalo" class="boton-comprar" type="button">Crear código de regalo</button>
+                    <p id="estado-codigos-regalo-root" class="texto-ayuda"></p>
+                </div>
+                <h3>Códigos creados</h3>
+                <div id="lista-codigos-regalo-root"><p class="texto-ayuda">Cargando códigos...</p></div>
+                </div>
+            </section>
+
         </div>
 
         <a href="index.html" class="link-volver">&larr; Volver al inicio</a>
     </main>
+    </div>
+
+    <!--
+      Modal de "Limpieza de cuentas de prueba". Se abre desde el engranaje de
+      "Usuarios registrados". La lógica de limpieza vive en js/limpieza-root.js
+      y la de abrir/cerrar el modal en js/registro-root.js.
+    -->
+    <div id="modal-limpieza-root" class="modal-limpieza-root oculto" role="dialog" aria-modal="true" aria-labelledby="titulo-limpieza-root">
+        <div class="modal-limpieza-root-contenido">
+            <button id="btn-cerrar-limpieza-root" class="btn-cerrar-modal" type="button" aria-label="Cerrar">&times;</button>
+            <section id="limpieza-root" class="bloque-admin oculto" aria-labelledby="titulo-limpieza-root">
+                <h2 id="titulo-limpieza-root">Limpieza de cuentas de prueba</h2>
+                <p class="texto-ayuda">Busca un usuario y administra sus datos de prueba. Estas acciones son permanentes y solo están disponibles para la cuenta root.</p>
+                <label for="input-buscar-usuario-root">Buscar usuario</label>
+                <input id="input-buscar-usuario-root" type="search" placeholder="Nombre, código o UID">
+                <div id="lista-usuarios-root">
+                    <p class="texto-ayuda">Cargando usuarios...</p>
+                </div>
+                <p class="texto-ayuda">Estas acciones restablecen datos de Firestore, pero borrar completamente el acceso de Google requiere eliminar también el usuario desde Firebase Authentication.</p>
+            </section>
+        </div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-    <script src="js/assets.js?v=20260925-3"></script>
+    <script src="js/limpieza-root.js?v=20261119-1"></script>
+    <script src="js/registro-root.js?v=20261119-4"></script>
+    <script src="js/codigos-regalo-root.js?v=20261119-3"></script>
+    <script src="js/fotos-perfil-root.js?v=20261119-1"></script>
+    <script src="js/musica-root.js?v=20261119-1"></script>
 </body>
 </html>
