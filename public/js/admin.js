@@ -57,6 +57,8 @@ const botonAgregarOpcion = document.getElementById("boton-agregar-opcion");
 const listaProductosAdmin = document.getElementById("lista-productos-admin");
 const botonGuardarProducto = formNuevoProducto.querySelector(".boton-comprar"); // NUEVO
 const botonCancelarEdicion = document.getElementById("boton-cancelar-edicion");
+// Botón que está al lado del nombre del lugar y sirve para desbloquearlo.
+const botonEditarNombreLugar = document.getElementById("boton-editar-nombre-lugar");
 const parametrosAdmin = new URLSearchParams(window.location.search);
 const idEditarInicial = parametrosAdmin.get("editar");
 
@@ -642,11 +644,11 @@ function agregarFilaPremio(contenedorPremios, premioExistente = {}) {
     previewPremio.classList.remove("oculto");
   }
 
+  // El número en la colección ya no se escribe a mano: el campo visible se
+  // eliminó. Queda un campo oculto que conserva el número que ya tenía el
+  // premio, para no perderlo al guardar el producto.
   const inputNumeroPremio = document.createElement("input");
-  inputNumeroPremio.type = "number";
-  inputNumeroPremio.min = "1";
-  inputNumeroPremio.step = "1";
-  inputNumeroPremio.placeholder = "Número en la colección (ej: 4)";
+  inputNumeroPremio.type = "hidden";
   inputNumeroPremio.className = "input-numero-premio";
   inputNumeroPremio.value = premioExistente.numero || "";
 
@@ -672,21 +674,8 @@ function agregarFilaPremio(contenedorPremios, premioExistente = {}) {
   const estadoTraseraPremio = document.createElement("p");
   estadoTraseraPremio.className = "estado-subida-opcion texto-ayuda";
   estadoTraseraPremio.textContent = premioExistente.imagenTrasera
-    ? "Imagen trasera actual del premio. Puedes reemplazarla si lo deseas."
-    : "Imagen trasera opcional del premio (se mostrará como reverso).";
-
-  const botonQuitarTraseraPremio = document.createElement("button");
-  botonQuitarTraseraPremio.type = "button";
-  botonQuitarTraseraPremio.textContent = "Quitar trasera";
-  botonQuitarTraseraPremio.className = "boton-quitar-fila";
-  botonQuitarTraseraPremio.classList.toggle("oculto", !premioExistente.imagenTrasera);
-  botonQuitarTraseraPremio.addEventListener("click", () => {
-    inputImagenTraseraPremio.value = "";
-    inputArchivoTraseraPremio.value = "";
-    previewTraseraPremio.classList.add("oculto");
-    botonQuitarTraseraPremio.classList.add("oculto");
-    estadoTraseraPremio.textContent = "Imagen trasera quitada. Guarda el producto para aplicar el cambio.";
-  });
+    ? "Trasera actual. Puedes reemplazarla."
+    : "Trasera opcional (reverso).";
 
   inputArchivoTraseraPremio.addEventListener("change", () => {
     const archivoElegido = inputArchivoTraseraPremio.files[0];
@@ -701,14 +690,12 @@ function agregarFilaPremio(contenedorPremios, premioExistente = {}) {
         inputImagenTraseraPremio.value = urlImagen;
         previewTraseraPremio.src = urlImagen;
         previewTraseraPremio.classList.remove("oculto");
-        botonQuitarTraseraPremio.classList.remove("oculto");
         estadoTraseraPremio.textContent = "Imagen trasera del premio subida.";
       })
       .catch((error) => {
         console.error("Error al subir imagen trasera del premio:", error.message);
         inputImagenTraseraPremio.value = "";
         previewTraseraPremio.classList.add("oculto");
-        botonQuitarTraseraPremio.classList.add("oculto");
         estadoTraseraPremio.textContent = "No se pudo subir esta imagen. Intenta de nuevo.";
       })
       .finally(() => {
@@ -724,13 +711,12 @@ function agregarFilaPremio(contenedorPremios, premioExistente = {}) {
   filaTraseraPremio.appendChild(previewTraseraPremio);
   filaTraseraPremio.appendChild(crearBotonEditarImagen(inputImagenTraseraPremio, previewTraseraPremio, estadoTraseraPremio, "Ajustar imagen trasera", () => ({ url: inputImagenPremio.value, etiqueta: "Frente" })));
   filaTraseraPremio.appendChild(estadoTraseraPremio);
-  filaTraseraPremio.appendChild(botonQuitarTraseraPremio);
 
   const estadoPremio = document.createElement("p");
   estadoPremio.className = "estado-subida-opcion texto-ayuda";
   estadoPremio.textContent = premioExistente.imagen
-    ? "Imagen actual del premio. Puedes reemplazarla si lo deseas."
-    : "Imagen opcional del coleccionable que el usuario puede ganar.";
+    ? "Imagen actual. Puedes reemplazarla."
+    : "Imagen del premio (opcional).";
 
   inputArchivoPremio.addEventListener("change", () => {
     const archivoElegido = inputArchivoPremio.files[0];
@@ -785,7 +771,7 @@ function agregarFilaPremio(contenedorPremios, premioExistente = {}) {
   filaFrontalPremio.appendChild(estadoPremio);
 
   // --- Orden final de la fila del premio, de arriba hacia abajo ---
-  // 1) Número en la colección.
+  // 1) Campo oculto con el número en la colección (no se ve en pantalla).
   filaPremio.appendChild(inputNumeroPremio);
   // 2) Nombre del premio.
   filaPremio.appendChild(inputNombrePremio);
@@ -798,26 +784,46 @@ function agregarFilaPremio(contenedorPremios, premioExistente = {}) {
   contenedorPremios.appendChild(filaPremio);
 }
 
+// Crea un campo del producto con su etiqueta visible arriba (ej: "Nombre").
+// "control" es el input o select que se coloca debajo de la etiqueta.
+function crearCampoOpcion(textoEtiqueta, control, claseExtra) {
+  // Contenedor del campo.
+  const campo = document.createElement("div");
+  campo.className = "campo-opcion" + (claseExtra ? " " + claseExtra : "");
+  // Texto pequeño que explica qué se escribe en el campo.
+  const etiqueta = document.createElement("span");
+  etiqueta.className = "etiqueta-campo-opcion";
+  etiqueta.textContent = textoEtiqueta;
+  // Primero la etiqueta y debajo el campo.
+  campo.appendChild(etiqueta);
+  campo.appendChild(control);
+  return campo;
+}
+
 function agregarFilaOpcion(opcionExistente = {}) {
   const fila = document.createElement("div");
   fila.className = "fila-opcion";
 
   const inputNombre = document.createElement("input");
   inputNombre.type = "text";
-  inputNombre.placeholder = "Nombre del producto (ej: Carta Goku)";
+  inputNombre.placeholder = "Ej: Carta Goku";
+  inputNombre.setAttribute("aria-label", "Nombre del producto");
   inputNombre.className = "input-nombre-opcion";
   inputNombre.value = opcionExistente.nombre || "";
 
   const inputSubtitulo = document.createElement("input");
   inputSubtitulo.type = "text";
-  inputSubtitulo.placeholder = "Subtítulo (ej: Álbum Dragon Ball)";
+  inputSubtitulo.placeholder = "Ej: Álbum Dragon Ball";
+  inputSubtitulo.setAttribute("aria-label", "Subtítulo del producto");
   inputSubtitulo.className = "input-subtitulo-opcion";
   inputSubtitulo.maxLength = 80;
   inputSubtitulo.value = opcionExistente.subtitulo || "";
 
   const inputPrecio = document.createElement("input");
   inputPrecio.type = "number";
-  inputPrecio.placeholder = "Precio en monedas (1 moneda = $100)";
+  inputPrecio.placeholder = "Ej: 3";
+  inputPrecio.title = "Precio en monedas (1 moneda = $100)";
+  inputPrecio.setAttribute("aria-label", "Precio en monedas (1 moneda = $100)");
   inputPrecio.min = "1";
   inputPrecio.step = "1";
   inputPrecio.className = "input-precio-opcion";
@@ -856,6 +862,18 @@ function agregarFilaOpcion(opcionExistente = {}) {
     preview.classList.remove("oculto");
   }
 
+  // Miniatura del producto: siempre visible a la derecha, aunque la fila
+  // esté cerrada, para reconocer el producto rápidamente.
+  const miniatura = document.createElement("img");
+  miniatura.className = "miniatura-opcion oculto";
+  miniatura.alt = "Imagen del producto";
+  if (opcionExistente.imagen) {
+    miniatura.src = opcionExistente.imagen;
+    miniatura.classList.remove("oculto");
+  }
+  // Si la imagen guardada no carga, se oculta la miniatura.
+  miniatura.addEventListener("error", () => miniatura.classList.add("oculto"));
+
   const estado = document.createElement("p");
   estado.className = "estado-subida-opcion texto-ayuda";
   estado.textContent = opcionExistente.imagen
@@ -875,12 +893,17 @@ function agregarFilaOpcion(opcionExistente = {}) {
         inputImagen.value = urlImagen;
         preview.src = urlImagen;
         preview.classList.remove("oculto");
+        // Actualiza también la miniatura que se ve con el producto cerrado.
+        miniatura.src = urlImagen;
+        miniatura.classList.remove("oculto");
         estado.textContent = "Imagen del producto subida.";
       })
       .catch((error) => {
         console.error("Error al subir imagen del producto:", error.message);
         inputImagen.value = "";
         preview.classList.add("oculto");
+        // Sin imagen válida, la miniatura se oculta.
+        miniatura.classList.add("oculto");
         estado.textContent = "No se pudo subir esta imagen. Intenta de nuevo.";
       })
       .finally(() => {
@@ -897,17 +920,39 @@ function agregarFilaOpcion(opcionExistente = {}) {
     fila.remove();
   });
 
+  // Botón con flecha que abre y cierra el detalle del producto
+  // (cambiar imagen + premios). La flecha apunta hacia abajo cuando está
+  // cerrado y hacia arriba cuando está abierto.
+  const botonDesplegar = document.createElement("button");
+  botonDesplegar.type = "button";
+  botonDesplegar.className = "boton-desplegar-producto";
+
+  // Botones de la derecha (flecha y "Quitar") agrupados en un solo bloque.
+  const accionesProducto = document.createElement("div");
+  accionesProducto.className = "acciones-opcion";
+  accionesProducto.appendChild(botonDesplegar);
+  accionesProducto.appendChild(botonEliminar);
+
+  // Parte siempre visible, ordenada en cuadrícula con etiquetas:
+  //   Fila 1: Nombre | Precio
+  //   Fila 2: Subtítulo (ancho completo)
+  //   Fila 3: Tipo   | flecha y "Quitar"
   const filaPrincipal = document.createElement("div");
   filaPrincipal.className = "fila-opcion-principal";
-  filaPrincipal.appendChild(inputNombre);
-  filaPrincipal.appendChild(inputSubtitulo);
-  filaPrincipal.appendChild(inputPrecio);
-  filaPrincipal.appendChild(selectorTipo);
-  filaPrincipal.appendChild(inputArchivo);
+  // Cada campo lleva su propia clase para poder acomodarlo distinto en pantallas anchas.
+  filaPrincipal.appendChild(crearCampoOpcion("Nombre", inputNombre, "campo-opcion-nombre"));
+  filaPrincipal.appendChild(crearCampoOpcion("Precio (monedas)", inputPrecio, "campo-opcion-precio"));
+  filaPrincipal.appendChild(crearCampoOpcion("Subtítulo (opcional)", inputSubtitulo, "campo-opcion-ancho campo-opcion-subtitulo"));
+  filaPrincipal.appendChild(crearCampoOpcion("Tipo", selectorTipo, "campo-opcion-tipo"));
   filaPrincipal.appendChild(inputImagen);
-  filaPrincipal.appendChild(preview);
-  filaPrincipal.appendChild(estado);
-  filaPrincipal.appendChild(botonEliminar);
+  filaPrincipal.appendChild(accionesProducto);
+
+  // Parte plegable: cambiar imagen del producto (se muestra solo al abrir).
+  const filaImagen = document.createElement("div");
+  filaImagen.className = "fila-opcion-imagen";
+  filaImagen.appendChild(crearCampoOpcion("Imagen del producto", inputArchivo));
+  filaImagen.appendChild(preview);
+  filaImagen.appendChild(estado);
 
   const panelPremios = document.createElement("div");
   panelPremios.className = "panel-premios-opcion";
@@ -945,8 +990,37 @@ function agregarFilaOpcion(opcionExistente = {}) {
   panelPremios.appendChild(contenedorPremios);
   panelPremios.appendChild(botonAgregarPremio);
 
-  fila.appendChild(filaPrincipal);
-  fila.appendChild(panelPremios);
+  // Todo lo que se oculta al cerrar la flecha: imagen y premios.
+  const detalleProducto = document.createElement("div");
+  detalleProducto.className = "detalle-opcion";
+  detalleProducto.appendChild(filaImagen);
+  detalleProducto.appendChild(panelPremios);
+
+  // Abre o cierra el detalle y actualiza la flecha y los textos de accesibilidad.
+  function establecerDesplegado(abierto) {
+    fila.classList.toggle("contraida", !abierto);
+    botonDesplegar.textContent = abierto ? "▲" : "▼";
+    botonDesplegar.setAttribute("aria-expanded", String(abierto));
+    const textoBoton = abierto ? "Ocultar imagen y premios" : "Mostrar imagen y premios";
+    botonDesplegar.title = textoBoton;
+    botonDesplegar.setAttribute("aria-label", textoBoton);
+  }
+  botonDesplegar.addEventListener("click", () => {
+    establecerDesplegado(fila.classList.contains("contraida"));
+  });
+
+  // Los productos que ya existen empiezan cerrados (página más corta).
+  // Una fila nueva y vacía empieza abierta para poder llenarla de inmediato.
+  establecerDesplegado(!opcionExistente.nombre);
+
+  // Cabecera siempre visible: campos a la izquierda y miniatura a la derecha.
+  const cabeceraProducto = document.createElement("div");
+  cabeceraProducto.className = "cabecera-opcion";
+  cabeceraProducto.appendChild(filaPrincipal);
+  cabeceraProducto.appendChild(miniatura);
+
+  fila.appendChild(cabeceraProducto);
+  fila.appendChild(detalleProducto);
   contenedorOpciones.appendChild(fila);
 }
 // Conectamos el botón "+ Agregar opción" con la función de arriba.
@@ -1055,7 +1129,7 @@ formNuevoProducto.addEventListener("submit", (evento) => {
   const opciones = leerOpcionesDelFormulario();
 
   if (opciones === null) {
-    alert("Completá cada producto con nombre y precio, y revisá que el número de cada premio sea un entero mayor a 0. El precio debe ser un número entero de monedas (1 moneda = $100).");
+    alert("Completa cada producto con nombre y precio. El precio debe ser un número entero de monedas (1 moneda = $100).");
     return;
   }
 
@@ -1079,6 +1153,25 @@ formNuevoProducto.addEventListener("submit", (evento) => {
   });
 });
 
+// Bloquea o desbloquea el campo "Nombre del lugar".
+// - bloqueado = true: el nombre solo se puede leer y aparece el botón "Actualizar nombre".
+// - bloqueado = false: el nombre se puede escribir y el botón se oculta.
+function bloquearNombreLugar(bloqueado) {
+  // readOnly impide escribir, pero el valor igual se guarda con el formulario.
+  inputNombreProducto.readOnly = bloqueado;
+  // Esta clase cambia el aspecto del campo mientras está bloqueado.
+  inputNombreProducto.classList.toggle("campo-bloqueado", bloqueado);
+  // El botón solo se ve mientras el nombre está bloqueado.
+  botonEditarNombreLugar.classList.toggle("oculto", !bloqueado);
+}
+
+// Al apretar "Actualizar nombre", recién ahí se puede cambiar el nombre.
+botonEditarNombreLugar.addEventListener("click", () => {
+  bloquearNombreLugar(false);
+  // Se deja el cursor dentro del campo porque la persona pidió editarlo.
+  inputNombreProducto.focus();
+});
+
 function limpiarFormularioLugar() {
   idLugarEditando = null;
   formNuevoProducto.reset();
@@ -1091,7 +1184,8 @@ function limpiarFormularioLugar() {
   tituloFormLugar.textContent = "Agregar nuevo lugar de compra";
   botonGuardarProducto.textContent = "Guardar lugar";
   botonCancelarEdicion.classList.add("oculto");
-  inputNombreProducto.focus();
+  // Un lugar nuevo necesita poder escribirse; ya no se enfoca el campo solo.
+  bloquearNombreLugar(false);
 }
 
 function cargarLugarEnFormulario(documento) {
@@ -1103,6 +1197,8 @@ function cargarLugarEnFormulario(documento) {
   botonCancelarEdicion.classList.remove("oculto");
 
   inputNombreProducto.value = datos.nombre || "";
+  // Al editar, el nombre queda bloqueado hasta apretar "Actualizar nombre".
+  bloquearNombreLugar(true);
   inputImagenProducto.value = datos.imagen || "";
 
   if (datos.imagen) {
@@ -1124,8 +1220,8 @@ function cargarLugarEnFormulario(documento) {
     opciones.forEach((opcion) => agregarFilaOpcion(opcion));
   }
 
+  // Se baja hasta el formulario, pero sin enfocar ningún campo.
   formNuevoProducto.scrollIntoView({ behavior: "smooth", block: "start" });
-  inputNombreProducto.focus();
 }
 
 function cargarLugarInicialParaEditar() {
@@ -1225,6 +1321,22 @@ function cargarProductosExistentes() {
 }
 
 botonCancelarEdicion.addEventListener("click", limpiarFormularioLugar);
+
+// Botón de engranaje junto al título "Lugares ya cargados".
+const botonAjustesLugares = document.getElementById("boton-ajustes-lugares");
+// Al apretarlo se muestran (o se vuelven a ocultar) los botones Editar y Eliminar.
+botonAjustesLugares.addEventListener("click", () => {
+  // Activa o desactiva el modo de gestión en la lista (el CSS muestra u oculta los botones).
+  const activo = listaProductosAdmin.classList.toggle("modo-gestion");
+  // Deja el engranaje con aspecto de "presionado" mientras los botones están visibles.
+  botonAjustesLugares.classList.toggle("activo", activo);
+  // Informa el estado a los lectores de pantalla.
+  botonAjustesLugares.setAttribute("aria-pressed", String(activo));
+  // Actualiza el texto de ayuda según el estado.
+  const texto = activo ? "Ocultar botones de editar y eliminar" : "Mostrar botones de editar y eliminar";
+  botonAjustesLugares.title = texto;
+  botonAjustesLugares.setAttribute("aria-label", texto);
+});
 
 // -----------------------------------------------------------------
 // 8) EL "CEREBRO" DE ESTA PÁGINA: revisa sesión Y email al cargar

@@ -10,10 +10,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="css/style.css?v=20261119-31">
+    <link rel="stylesheet" href="css/style.css?v=20261123-38">
 </head>
 
-<body>
+<body class="pagina-admin">
     <!--
       Panel de administración: acá se agregan los lugares donde los
       usuarios podrán comprar alimentos/productos con coleccionables.
@@ -57,6 +57,19 @@
               pedacito por separado.
             -->
 
+            <!-- Lugares ya cargados: ahora van primero, antes del formulario -->
+            <section class="bloque-admin">
+                <!-- Título a la izquierda y botón de engranaje a la derecha -->
+                <div class="cabecera-lugares-cargados">
+                    <h2>Lugares ya cargados</h2>
+                    <!-- Al apretarlo se muestran u ocultan los botones Editar y Eliminar de cada lugar -->
+                    <button type="button" id="boton-ajustes-lugares" class="boton-ajustes-lugares" aria-pressed="false" aria-label="Mostrar botones de editar y eliminar" title="Mostrar botones de editar y eliminar">⚙</button>
+                </div>
+                <div id="lista-productos-admin">
+                    <p>Cargando productos...</p>
+                </div>
+            </section>
+
             <section class="bloque-admin">
                 <h2 id="titulo-form-lugar">Agregar nuevo lugar de compra</h2>
 
@@ -71,7 +84,12 @@
                     -->
 
                     <label for="input-nombre-producto">Nombre del lugar</label>
-                    <input type="text" id="input-nombre-producto" placeholder="Ej: Kiosco del barrio" required>
+                    <!-- Fila con el nombre del lugar y, al lado, el botón para poder cambiarlo -->
+                    <div class="fila-nombre-lugar">
+                        <input type="text" id="input-nombre-producto" placeholder="Ej: Kiosco del barrio" required>
+                        <!-- Este botón solo aparece al editar un lugar ya guardado. Al apretarlo se desbloquea el nombre. -->
+                        <button type="button" id="boton-editar-nombre-lugar" class="boton-secundario oculto">✎ Actualizar nombre</button>
+                    </div>
 
                     <label for="input-archivo-imagen">Imagen del lugar</label>
                     <input type="file" id="input-archivo-imagen" accept="image/*">
@@ -125,12 +143,6 @@
                 </form>
             </section>
 
-            <section class="bloque-admin">
-                <h2>Lugares ya cargados</h2>
-                <div id="lista-productos-admin">
-                    <p>Cargando productos...</p>
-                </div>
-            </section>
         </div>
     </main>
 
@@ -155,7 +167,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
-    <script src="js/admin.js?v=20261119-21"></script>
+    <script src="js/admin.js?v=20261123-31"></script>
     <script src="js/musica.js?v=20261119-1"></script>
 </body>
 </html>

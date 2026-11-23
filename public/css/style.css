@@ -1535,6 +1535,73 @@ main > a:hover {
   font: inherit;
 }
 
+/* Cabecera del producto: campos a la izquierda, miniatura a la derecha */
+.cabecera-opcion {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.cabecera-opcion .fila-opcion-principal {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.miniatura-opcion {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border: 2px solid var(--color-mostaza);
+  border-radius: var(--radio-borde-chico);
+  background-color: var(--color-blanco);
+}
+
+.miniatura-opcion.oculto {
+  display: none;
+}
+
+/* Detalle plegable del producto (imagen + premios) */
+.fila-opcion-imagen {
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* El selector de archivo no necesita todo el ancho */
+.fila-opcion-imagen .campo-opcion {
+  max-width: 360px;
+}
+
+/* La vista previa se ve en la miniatura de la derecha, así que aquí no se repite */
+.fila-opcion-imagen .preview-opcion {
+  display: none;
+}
+
+.fila-opcion-imagen .estado-subida-opcion {
+  margin: 6px 0 0;
+}
+
+.detalle-opcion {
+  display: block;
+}
+
+/* Cuando la flecha está cerrada, el detalle no se ve */
+.fila-opcion.contraida .detalle-opcion {
+  display: none;
+}
+
+.boton-desplegar-producto {
+  min-width: var(--alto-tactil);
+  min-height: var(--alto-tactil);
+  padding: 0 12px;
+  border: 2px solid var(--color-mostaza-oscuro);
+  border-radius: var(--radio-borde-chico);
+  background-color: transparent;
+  color: var(--color-mostaza-oscuro);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
 .panel-premios-opcion {
   padding: 10px;
   border: 1px dashed var(--color-verde-menta-oscuro);
@@ -3557,7 +3624,8 @@ header:has(#link-root:not(.oculto)) { padding-top: 42px; }
 
 .fila-ranking {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  /* Columnas: puesto, foto de perfil, nombre y cantidad de objetos */
+  grid-template-columns: 34px 34px minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
   padding: 8px 10px;
@@ -3567,6 +3635,15 @@ header:has(#link-root:not(.oculto)) { padding-top: 42px; }
 }
 
 .puesto-ranking { font-size: 1.25rem; text-align: center; }
+/* Imagen de perfil circular a la izquierda del nombre */
+.foto-ranking {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(200, 138, 34, 0.7);
+  background: #fff8e7;
+}
 .nombre-ranking { color: var(--color-rojo-cereza); font-weight: 800; overflow-wrap: anywhere; }
 .cantidad-ranking { color: var(--color-texto-suave); font-size: 0.85rem; white-space: nowrap; }
 
@@ -5060,3 +5137,289 @@ header #link-zona-juego:not(.oculto) ~ #monedas-usuario { grid-row: 4; }
 /* Dentro del modal la sección no necesita su propia tarjeta. */
 .modal-limpieza-root-contenido .bloque-admin { margin: 0; padding: 0; background: none; box-shadow: none; }
 .modal-limpieza-root-contenido .bloque-admin h2 { padding-right: 42px; }
+
+/* ---- Admin: campos del lugar a la mitad del ancho ---- */
+/* Se usa "#form-nuevo-producto #id" para que gane sobre las reglas de ancho completo de arriba. */
+#form-nuevo-producto #input-nombre-producto {
+  width: 50%;
+  min-width: 220px;
+  max-width: 100%;
+}
+
+#form-nuevo-producto #input-archivo-imagen {
+  width: 50%;
+  min-width: 300px;
+  max-width: 100%;
+}
+
+/* Fila con el nombre del lugar y el botón "Actualizar nombre" al lado */
+.fila-nombre-lugar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.fila-nombre-lugar .boton-secundario {
+  min-height: var(--alto-tactil);
+  white-space: nowrap;
+}
+
+/* Aspecto del nombre mientras está bloqueado (no se puede escribir) */
+#form-nuevo-producto #input-nombre-producto.campo-bloqueado {
+  background-color: var(--color-papel);
+  cursor: default;
+}
+
+#form-nuevo-producto #input-nombre-producto.campo-bloqueado:focus {
+  border-color: var(--color-mostaza);
+}
+
+/* ---- Admin: filas de producto ordenadas en cuadrícula ---- */
+/* Fila 1: Nombre | Precio. Fila 2: Subtítulo. Fila 3: Tipo | flecha y Quitar */
+.fila-opcion .fila-opcion-principal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 10px 12px;
+  align-items: end;
+}
+
+/* Cada campo ocupa su celda; los controles llenan el ancho de la celda */
+.fila-opcion .campo-opcion {
+  display: block;
+  min-width: 0;
+}
+
+.fila-opcion .campo-opcion .input-nombre-opcion,
+.fila-opcion .campo-opcion .input-subtitulo-opcion,
+.fila-opcion .campo-opcion .input-precio-opcion,
+.fila-opcion .campo-opcion .select-tipo-opcion {
+  width: 100%;
+  min-width: 0;
+}
+
+/* El subtítulo usa todo el ancho de la cuadrícula */
+.fila-opcion .campo-opcion-ancho {
+  grid-column: 1 / -1;
+}
+
+/* Texto pequeño sobre cada campo */
+.etiqueta-campo-opcion {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--color-texto-suave);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* Flecha y "Quitar" juntos, alineados a la derecha */
+.acciones-opcion {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* En pantallas angostas todo pasa a una sola columna */
+@media (max-width: 520px) {
+  .fila-opcion .fila-opcion-principal {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .acciones-opcion {
+    justify-content: flex-start;
+  }
+}
+
+/* ---- Admin: título "Lugares ya cargados" con engranaje a la derecha ---- */
+.cabecera-lugares-cargados {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Dentro de la cabecera, el título no necesita su propio margen inferior */
+.cabecera-lugares-cargados h2 {
+  margin-bottom: 0;
+}
+
+.boton-ajustes-lugares {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 2px solid #8A5E10;
+  border-radius: 50%;
+  background-image: linear-gradient(to bottom, #FFFFFF 0%, var(--color-papel) 45%, #F3D9A0 100%);
+  color: var(--color-texto);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(59, 46, 32, 0.3);
+  transition: transform 0.4s ease;
+}
+
+.boton-ajustes-lugares:hover,
+.boton-ajustes-lugares:focus-visible {
+  transform: rotate(60deg);
+  outline: 3px solid var(--color-verde-menta);
+  outline-offset: 2px;
+}
+
+/* Con los botones visibles, el engranaje se ve "presionado" */
+.boton-ajustes-lugares.activo {
+  background-image: none;
+  background-color: var(--color-verde-menta);
+  color: var(--color-blanco);
+}
+
+/* Por defecto los botones Editar y Eliminar de cada lugar están ocultos */
+#lista-productos-admin:not(.modo-gestion) .tarjeta-producto-admin button {
+  display: none;
+}
+
+/* ---- Admin: premios en cuadrícula, 3 por fila ---- */
+/* El panel de premios se usa como "contenedor" para adaptar las columnas a su ancho */
+.panel-premios-opcion {
+  container-type: inline-size;
+}
+
+/* 3 columnas iguales: premios 1-2-3 en la primera fila, 4-5-6 en la segunda, etc. */
+.contenedor-premios-opcion {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+
+/* Tarjeta de premio compacta */
+.contenedor-premios-opcion .fila-premio {
+  gap: 6px;
+  padding: 8px 6px;
+  min-width: 0;
+  align-content: flex-start;
+}
+
+.contenedor-premios-opcion .fila-premio::before {
+  font-size: 0.7rem;
+}
+
+/* Nombre del premio */
+#form-nuevo-producto .fila-premio .input-nombre-premio {
+  flex: 1 1 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 8px;
+  font-size: 0.85rem;
+}
+
+/* Bloques de imagen: una etiqueta pequeña, el selector de archivo y la vista previa con "Ajustar" */
+.contenedor-premios-opcion .fila-frontal-premio,
+.contenedor-premios-opcion .fila-trasera-premio {
+  gap: 4px 6px;
+}
+
+.contenedor-premios-opcion .fila-frontal-premio::before,
+.contenedor-premios-opcion .fila-trasera-premio::before {
+  flex: 1 1 100%;
+  color: var(--color-texto-suave);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.contenedor-premios-opcion .fila-frontal-premio::before { content: "Imagen frontal"; }
+.contenedor-premios-opcion .fila-trasera-premio::before { content: "Imagen trasera"; }
+
+#form-nuevo-producto .fila-premio input[type="file"] {
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  font-size: 0.7rem;
+}
+
+.contenedor-premios-opcion .fila-premio .preview-opcion {
+  width: 44px;
+  height: 44px;
+}
+
+.contenedor-premios-opcion .fila-premio .boton-editar-imagen {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 30px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+}
+
+.contenedor-premios-opcion .fila-premio .estado-subida-opcion {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.25;
+}
+
+.contenedor-premios-opcion .fila-premio .boton-quitar-fila {
+  flex: 1 1 100%;
+  min-height: 32px;
+  padding: 0 8px;
+  font-size: 0.78rem;
+}
+
+/* Si el panel es angosto (por ejemplo en celular), bajan a 2 y luego a 1 columna */
+@container (max-width: 340px) {
+  .contenedor-premios-opcion {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 230px) {
+  .contenedor-premios-opcion {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Admin: versión de computadora (pantalla ancha) ---- */
+/* La página de administración usa casi todo el ancho disponible, hasta 1280 px */
+.pagina-admin main,
+.pagina-admin #info-admin-root {
+  max-width: 1280px;
+}
+
+/* Nombre e imagen del lugar: a la mitad, pero sin pasarse en pantallas anchas */
+#form-nuevo-producto #input-nombre-producto {
+  max-width: min(100%, 420px);
+}
+
+#form-nuevo-producto #input-archivo-imagen {
+  max-width: min(100%, 460px);
+}
+
+/* Lugares ya cargados: en pantallas anchas se reparten en 2 o 3 columnas */
+.pagina-admin #lista-productos-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr));
+  column-gap: 24px;
+}
+
+/* Cada producto es un "contenedor" para adaptar su fila al ancho disponible */
+.fila-opcion {
+  container-type: inline-size;
+}
+
+/* Si hay espacio suficiente, nombre, subtítulo, precio, tipo y botones van en UNA sola línea */
+@container (min-width: 900px) {
+  .fila-opcion .fila-opcion-principal {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) 130px 180px auto;
+  }
+
+  .fila-opcion .campo-opcion-nombre { grid-column: 1; grid-row: 1; }
+  .fila-opcion .campo-opcion-subtitulo { grid-column: 2; grid-row: 1; }
+  .fila-opcion .campo-opcion-precio { grid-column: 3; grid-row: 1; }
+  .fila-opcion .campo-opcion-tipo { grid-column: 4; grid-row: 1; }
+  .fila-opcion .acciones-opcion { grid-column: 5; grid-row: 1; }
+}
