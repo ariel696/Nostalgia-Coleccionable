@@ -287,6 +287,10 @@ function aplicarCodigoReferidoPendiente(usuario, nombreUsuario) {
       avisarCodigo("Primero debes completar tu registro.");
       return false;
     }
+    if (!dentroVentanaReferido(ficha.data().creadoEn)) {
+      avisarCodigo("Ya pasaron los 3 días para ingresar un código de referido.");
+      return false;
+    }
     const referrerUid = referido.uid;
     if (!referrerUid || referrerUid === usuario.uid) {
       avisarCodigo("No puedes usar tu propio código de referido.");
@@ -326,6 +330,19 @@ function aplicarCodigoReferidoPendiente(usuario, nombreUsuario) {
   });
 }
 
+// El campo de código de referido solo está disponible durante los primeros
+// 3 días desde que se creó la cuenta (campo "creadoEn" de la ficha).
+const DIAS_VENTANA_REFERIDO = 3;
+
+function dentroVentanaReferido(creadoEn) {
+  if (!creadoEn) return false; // cuentas sin fecha de creación = antiguas
+  const creado = typeof creadoEn.toMillis === "function"
+    ? creadoEn.toMillis()
+    : (typeof creadoEn.toDate === "function" ? creadoEn.toDate().getTime() : NaN);
+  if (!Number.isFinite(creado)) return false;
+  return Date.now() - creado < DIAS_VENTANA_REFERIDO * 86400000;
+}
+
 function actualizarCampoReferido(usuario) {
   if (!usuario || !campoReferidoLogueado) return;
   Promise.all([
@@ -333,7 +350,12 @@ function actualizarCampoReferido(usuario) {
     db.collection("referidos").doc(usuario.uid).get()
   ]).then(([ficha, invitacion]) => {
     const datos = ficha.exists ? ficha.data() : {};
-    const yaUsoCodigo = invitacion.exists || datos.codigoReferidoUsado;
+    // Pasados los 3 días desde la creación de la cuenta, el mensaje y el
+    // campo para canjear desaparecen definitivamente.
+    if (!dentroVentanaReferido(datos.creadoEn)) {
+      campoReferidoLogueado.classList.add("oculto");
+      return;
+    }
     if (!datos.codigoReferidoUsado && invitacion.exists) {
       // Si root formateó la cuenta, el campo de uso ya fue eliminado y este
       // documento restante es un registro antiguo que debe limpiarse.
@@ -341,10 +363,13 @@ function actualizarCampoReferido(usuario) {
         campoReferidoLogueado.classList.remove("oculto");
       });
     }
-    // El mismo campo también sirve para códigos de regalo, por eso debe
-    // seguir visible aunque la cuenta ya haya usado un código de referido.
+    // Si ya usó un código de referido, no hace falta seguir mostrando el campo.
+    if (datos.codigoReferidoUsado) {
+      campoReferidoLogueado.classList.add("oculto");
+      return;
+    }
     campoReferidoLogueado.classList.remove("oculto");
-  }).catch(() => campoReferidoLogueado.classList.remove("oculto"));
+  }).catch(() => campoReferidoLogueado.classList.add("oculto"));
 }
 
 // -----------------------------------------------------------------
@@ -458,6 +483,8 @@ function obtenerOCrearUsuario(usuario) {
         mostrarMonedasEnPantalla(datosIniciales.monedas);
         actualizarEstadoDineroDiario(datosIniciales.ultimoReclamo);
         sincronizarPerfilPublico(usuario, datosIniciales);
+        // La ficha recién existe: recalculamos si se muestra el campo de referido.
+        actualizarCampoReferido(usuario);
       });
       }).catch((error) => console.error("Error al reservar el nombre de usuario:", error.message));
     }
@@ -899,7 +926,7 @@ function aplicarCodigoUnificado() {
   const texto = inputCodigoReferido && inputCodigoReferido.value.trim();
   if (!usuario || !inputCodigoReferido || !botonAplicarReferido || !estadoCodigoReferido) return;
   if (!texto) {
-    estadoCodigoReferido.textContent = "Ingresa un código de referido o de regalo.";
+    estadoCodigoReferido.textContent = "Ingresa un código de referido.";
     return;
   }
 

@@ -54,10 +54,21 @@
     document.addEventListener("pointerdown", iniciar, { once: true });
   }
 
-  auth.onAuthStateChanged((usuario) => {
-    if (!usuario) return;
-    db.collection("musicaSitio").where("activo", "==", true).limit(1).get()
-      .then((snap) => { if (!snap.empty) montarReproductor(snap.docs[0].data()); })
-      .catch((error) => console.warn("No se pudo cargar la música de fondo:", error.message));
-  });
+  function cargarMusicaEnSegundoPlano() {
+    auth.onAuthStateChanged((usuario) => {
+      if (!usuario) return;
+      db.collection("musicaSitio").where("activo", "==", true).limit(1).get()
+        .then((snap) => { if (!snap.empty) montarReproductor(snap.docs[0].data()); })
+        .catch((error) => console.warn("No se pudo cargar la música de fondo:", error.message));
+    });
+  }
+
+  // La música no debe competir con el primer dibujo ni con la navegación.
+  // Se carga cuando el navegador queda libre, con un límite para no dejarla
+  // esperando indefinidamente en dispositivos de pocos recursos.
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(cargarMusicaEnSegundoPlano, { timeout: 1200 });
+  } else {
+    window.setTimeout(cargarMusicaEnSegundoPlano, 1200);
+  }
 })();

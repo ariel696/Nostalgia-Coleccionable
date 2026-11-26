@@ -78,7 +78,45 @@ const tituloProducto = document.getElementById("titulo-producto");
 const parrafoMonedasDisponibles = document.getElementById("monedas-disponibles");
 const grillaOpciones = document.getElementById("grilla-opciones");
 const linkEditarLugar = document.getElementById("link-editar-lugar");
+const linkVolverTienda = document.querySelector(".link-volver");
 const EMAIL_ADMIN = "arielriquelme08@gmail.com";
+
+// Cloudinary entrega formatos modernos y una imagen del ancho necesario,
+// reduciendo bastante el trabajo de red en celulares. Las demás URLs quedan
+// intactas.
+function optimizarImagenCloudinary(url, ancho) {
+  if (typeof url !== "string" || !url.includes("res.cloudinary.com")) return url;
+  const marca = "/upload/";
+  const posicion = url.indexOf(marca);
+  if (posicion < 0) return url;
+
+  const resto = url.slice(posicion + marca.length);
+  const primerSegmento = resto.split("/")[0] || "";
+  if (primerSegmento.includes(",") || primerSegmento.startsWith("f_")) return url;
+
+  return url.slice(0, posicion + marca.length)
+    + "f_auto,q_auto,w_" + ancho + ",c_limit/"
+    + resto;
+}
+
+// Al volver desde la tienda, history.back() permite restaurar la página desde
+// la caché del navegador en vez de descargar Firebase, fuentes y productos.
+if (linkVolverTienda) {
+  linkVolverTienda.addEventListener("click", (evento) => {
+    try {
+      const origen = new URL(document.referrer, window.location.href);
+      const vieneDeLaTienda = origen.origin === window.location.origin
+        && /\/tienda\.html$/i.test(origen.pathname);
+      if (vieneDeLaTienda && window.history.length > 1) {
+        evento.preventDefault();
+        window.history.back();
+      }
+    } catch (error) {
+      // El href normal sigue funcionando si el referrer no se puede leer.
+    }
+  });
+}
+
 const TAZOS_POKEMON_51 = [
   "Tazo Pokemon #001 Bulbasaur",
   "Tazo Pokemon #002 Ivysaur",
@@ -462,6 +500,147 @@ function mostrarCompraConfirmada(articuloComprado, coleccionablesGanados, tipoAr
 // -----------------------------------------------------------------
 // Muestra la imagen en grande a la izquierda y, a la derecha, el nombre,
 // la descripción, lo que se podría obtener y el precio con su botón.
+// Deja cada tazo como un CÍRCULO PERFECTO sin el fondo de la foto.
+// No borra por color (eso se "colaba" por los huecos del borde y comía partes
+// de adentro). En cambio: 1) busca dónde está el tazo (todo lo que no es fondo
+// claro y liso), 2) calcula su centro y su radio, y 3) recorta un círculo
+// exacto. Todo lo que queda dentro del círculo se conserva intacto, incluso lo
+// blanco o desgastado. Devuelve un PNG transparente, o null si no se puede
+// (imagen de otro sitio sin permiso CORS, o no parece un tazo redondo, como un
+// álbum); en ese caso se usa la imagen original.
+const cacheImagenesSinFondo = new Map();
+
+function quitarFondoClaro(origen) {
+  if (!origen || origen.indexOf("data:") === 0) return Promise.resolve(null);
+  if (cacheImagenesSinFondo.has(origen)) return cacheImagenesSinFondo.get(origen);
+
+  const promesa = new Promise((resolver) => {
+    const imagen = new Image();
+    imagen.crossOrigin = "anonymous";
+    imagen.onload = () => {
+      try {
+        // --- 1) Analizamos una copia chica para encontrar el tazo ---
+        const ANALISIS = 180;
+        const escala = Math.min(1, ANALISIS / Math.max(imagen.naturalWidth, imagen.naturalHeight));
+        const aw = Math.max(1, Math.round(imagen.naturalWidth * escala));
+        const ah = Math.max(1, Math.round(imagen.naturalHeight * escala));
+        const lienzoA = document.createElement("canvas");
+        lienzoA.width = aw;
+        lienzoA.height = ah;
+        const ctxA = lienzoA.getContext("2d", { willReadFrequently: true });
+        ctxA.drawImage(imagen, 0, 0, aw, ah);
+        const px = ctxA.getImageData(0, 0, aw, ah).data;
+
+        const conteoColumnas = new Uint16Array(aw);
+        const conteoFilas = new Uint16Array(ah);
+        for (let y = 0; y < ah; y += 1) {
+          for (let x = 0; x < aw; x += 1) {
+            const i = (y * aw + x) * 4;
+            const r = px[i], g = px[i + 1], b = px[i + 2];
+            const minimo = Math.min(r, g, b);
+            // Es "tazo" si no es un fondo claro y sin color.
+            if (px[i + 3] > 20 && (minimo < 185 || Math.max(r, g, b) - minimo > 55)) {
+              conteoColumnas[x] += 1;
+              conteoFilas[y] += 1;
+            }
+          }
+        }
+        const UMBRAL = 8; // ignora motas sueltas y sombras
+        let izq = -1, der = -1, arr = -1, aba = -1;
+        for (let x = 0; x < aw; x += 1) if (conteoColumnas[x] >= UMBRAL) { if (izq < 0) izq = x; der = x + 1; }
+        for (let y = 0; y < ah; y += 1) if (conteoFilas[y] >= UMBRAL) { if (arr < 0) arr = y; aba = y + 1; }
+        if (izq < 0 || arr < 0) { resolver(null); return; }
+
+        const ancho = der - izq;
+        const alto = aba - arr;
+        // Si no es más o menos cuadrado, no es un tazo redondo (ej.: un álbum).
+        if (Math.abs(ancho - alto) > 0.12 * Math.max(ancho, alto) || Math.max(ancho, alto) < 0.5 * Math.max(aw, ah)) {
+          resolver(null);
+          return;
+        }
+
+        // --- 2) Centro y radio (en píxeles de la imagen original) ---
+        const factor = imagen.naturalWidth / aw;
+        const cx = ((izq + der) / 2) * factor;
+        const cy = ((arr + aba) / 2) * (imagen.naturalHeight / ah);
+        // Un pelín menos de radio para no dejar un halo blanco en el borde.
+        const radio = (Math.max(ancho, alto) / 2 - 0.5) * factor;
+        if (!(radio > 8)) { resolver(null); return; }
+
+        // --- 3) Recortamos el círculo perfecto ---
+        const SALIDA = 192;
+        const lienzo = document.createElement("canvas");
+        lienzo.width = SALIDA;
+        lienzo.height = SALIDA;
+        const ctx = lienzo.getContext("2d");
+        ctx.imageSmoothingQuality = "high";
+        ctx.beginPath();
+        ctx.arc(SALIDA / 2, SALIDA / 2, SALIDA / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(imagen, cx - radio, cy - radio, radio * 2, radio * 2, 0, 0, SALIDA, SALIDA);
+        resolver(lienzo.toDataURL("image/png"));
+      } catch (error) {
+        resolver(null); // lienzo "contaminado" por CORS u otro problema
+      }
+    };
+    imagen.onerror = () => resolver(null);
+    imagen.src = origen;
+  });
+
+  cacheImagenesSinFondo.set(origen, promesa);
+  return promesa;
+}
+
+// Imagen lista para mostrar en la grilla de premios. Primero se busca una
+// miniatura ya recortada en círculo, guardada junto a la original en una
+// carpeta "min" (ej.: .../dragon-ball-z/1tazo.webp -> .../dragon-ball-z/min/1tazo.webp).
+// Pesa ~15 KB en vez de ~170 KB, así que aparece casi al instante. Si no
+// existe, se recorta en el navegador con quitarFondoClaro().
+const cacheImagenesPremio = new Map();
+
+function urlMiniaturaPremio(origen) {
+  if (!origen || /^(data:|https?:|\/\/)/i.test(origen)) return null;
+  const partes = origen.match(/^(.*\/)?([^\/?#]+?)\.[a-z0-9]+([?#].*)?$/i);
+  if (!partes) return null;
+  return (partes[1] || "") + "min/" + partes[2] + ".webp";
+}
+
+function imagenListaPremio(origen) {
+  if (cacheImagenesPremio.has(origen)) return cacheImagenesPremio.get(origen);
+  const urlMin = urlMiniaturaPremio(origen);
+  const promesa = new Promise((resolver) => {
+    const alternativa = () => quitarFondoClaro(origen).then(resolver);
+    if (!urlMin) { alternativa(); return; }
+    const prueba = new Image();
+    prueba.onload = () => resolver(urlMin);
+    prueba.onerror = alternativa;
+    prueba.src = urlMin;
+  });
+  cacheImagenesPremio.set(origen, promesa);
+  return promesa;
+}
+
+// Lista de coleccionables que el usuario ya tiene (null = todavía no se sabe,
+// por ejemplo sin sesión o mientras carga). Sirve para oscurecer, en el modal
+// del producto, los premios que todavía le faltan.
+let coleccionUsuarioActual = null;
+
+function idDePremio(premio) {
+  return premio.id || String(premio.nombre || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function usuarioTienePremio(premio) {
+  if (!Array.isArray(coleccionUsuarioActual)) return true; // sin datos: no oscurecemos
+  const idBuscado = idDePremio(premio);
+  return coleccionUsuarioActual.some((item) => {
+    if (!item) return false;
+    if (item.id && item.id === idBuscado) return true;
+    return item.nombre === premio.nombre
+      && String(item.numero || "") === String(premio.numero || "");
+  });
+}
+
 function mostrarDetalleOpcion(opcion, textoDescripcion, referenciaUsuario) {
   const modalExistente = document.querySelector(".modal-detalle-producto");
   if (modalExistente) modalExistente.remove();
@@ -501,8 +680,9 @@ function mostrarDetalleOpcion(opcion, textoDescripcion, referenciaUsuario) {
   const tieneImagen = typeof opcion.imagen === "string" && opcion.imagen.trim() !== "";
   if (tieneImagen) {
     const imagen = document.createElement("img");
-    imagen.src = opcion.imagen;
+    imagen.src = optimizarImagenCloudinary(opcion.imagen, 640);
     imagen.alt = opcion.nombre;
+    imagen.decoding = "async";
     imagen.onerror = () => {
       imagen.remove();
       columnaImagen.classList.add("sin-imagen");
@@ -539,11 +719,45 @@ function mostrarDetalleOpcion(opcion, textoDescripcion, referenciaUsuario) {
       ? "Podr\u00EDas obtener:"
       : "Podr\u00EDas obtener uno de estos " + premios.length + ":";
 
+    const sabeColeccion = Array.isArray(coleccionUsuarioActual);
+    const cantidadTenidos = sabeColeccion ? premios.filter(usuarioTienePremio).length : 0;
+    if (sabeColeccion) {
+      subtitulo.textContent += " (tienes " + cantidadTenidos + ")";
+    }
+
     const lista = document.createElement("ul");
     lista.className = "detalle-producto-premios";
     premios.forEach((premio) => {
       const item = document.createElement("li");
-      item.textContent = (premio.numero ? "#" + premio.numero + " " : "") + premio.nombre;
+      item.className = "detalle-premio";
+      if (sabeColeccion && !usuarioTienePremio(premio)) {
+        item.classList.add("detalle-premio-faltante");
+        item.title = "Aún no lo tienes";
+      }
+
+      const miniatura = document.createElement("img");
+      miniatura.className = "detalle-premio-imagen";
+      miniatura.loading = "lazy";
+      miniatura.decoding = "async";
+      miniatura.alt = premio.nombre;
+      const origenImagen = optimizarImagenCloudinary(obtenerImagenColeccionable(premio), 180);
+      miniatura.onerror = () => {
+        miniatura.onerror = null;
+        miniatura.src = crearImagenColeccionableDataUri(premio);
+      };
+      // Primero se limpia el fondo y recién después se muestra, para que no
+      // aparezca un instante con el fondo blanco.
+      miniatura.classList.add("cargando");
+      imagenListaPremio(origenImagen).then((sinFondo) => {
+        miniatura.src = sinFondo || origenImagen;
+        miniatura.classList.remove("cargando");
+      });
+
+      const nombrePremio = document.createElement("span");
+      nombrePremio.className = "detalle-premio-nombre";
+      nombrePremio.textContent = (premio.numero ? "#" + premio.numero + " " : "") + premio.nombre;
+
+      item.append(miniatura, nombrePremio);
       lista.appendChild(item);
     });
 
@@ -624,8 +838,10 @@ function dibujarOpciones(opciones, referenciaUsuario) {
     if (tieneImagen) {
       const imagenElemento = document.createElement("img");
       imagenElemento.className = "imagen-opcion";
-      imagenElemento.src = opcion.imagen;
+      imagenElemento.src = optimizarImagenCloudinary(opcion.imagen, 480);
       imagenElemento.alt = opcion.nombre;
+      imagenElemento.loading = "lazy";
+      imagenElemento.decoding = "async";
       imagenElemento.onerror = () => {
         imagenElemento.remove();
         vistaProducto.classList.add("sin-imagen");
@@ -636,6 +852,21 @@ function dibujarOpciones(opciones, referenciaUsuario) {
     }
 
     vistaProducto.appendChild(descripcionElemento);
+
+    // Al hacer clic (o Enter/Espacio) en el producto se abre el detalle con
+    // la descripción y los premios que se pueden ganar.
+    vistaProducto.setAttribute("role", "button");
+    vistaProducto.setAttribute("tabindex", "0");
+    vistaProducto.style.cursor = "pointer";
+    vistaProducto.addEventListener("click", () => {
+      mostrarDetalleOpcion(opcion, textoDescripcion.textContent, referenciaUsuario);
+    });
+    vistaProducto.addEventListener("keydown", (evento) => {
+      if (evento.key === "Enter" || evento.key === " ") {
+        evento.preventDefault();
+        mostrarDetalleOpcion(opcion, textoDescripcion.textContent, referenciaUsuario);
+      }
+    });
 
     tarjeta.appendChild(vistaProducto);
     if (opcion.subtitulo) {
@@ -728,6 +959,10 @@ function comprarOpcion(referenciaUsuario, opcion) {
     loteCompra.set(db.collection("perfilesPublicos").doc(auth.currentUser.uid), cambiosPerfilPublico, { merge: true });
 
     loteCompra.commit().then(() => {
+      // Actualizamos la copia local para que el modal ya muestre lo recién ganado.
+      if (tipoArticulo !== "Objeto" && Array.isArray(coleccionUsuarioActual)) {
+        coleccionUsuarioActual = coleccionUsuarioActual.concat(articulosParaGuardar);
+      }
       return reproducirSonidoCompra(opcion).then(() => {
         mostrarCompraConfirmada(articuloComprado, coleccionablesGanados, tipoArticulo);
         mostrarMonedasDisponibles(monedasActuales - opcion.precio);
@@ -816,6 +1051,7 @@ if (!idProducto) {
     referenciaUsuarioActual = usuario ? db.collection("usuarios").doc(usuario.uid) : null;
 
     if (!usuario) {
+      coleccionUsuarioActual = null;
       linkEditarLugar.classList.add("oculto");
       parrafoMonedasDisponibles.textContent = "Inicia sesión para ver tu saldo y comprar.";
       pintarOpcionesDisponibles();
@@ -831,6 +1067,7 @@ if (!idProducto) {
 
     pintarOpcionesDisponibles();
     obtenerDatosUsuario(referenciaUsuarioActual, usuario).then((datosUsuario) => {
+      coleccionUsuarioActual = Array.isArray(datosUsuario.coleccionables) ? datosUsuario.coleccionables : [];
       mostrarMonedasDisponibles(datosUsuario.monedas);
       pintarOpcionesDisponibles();
     }).catch((error) => {

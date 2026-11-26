@@ -28,10 +28,15 @@ const linkInventarioPrivado = document.getElementById("link-inventario-privado")
 const botonAjustes = document.getElementById("btn-ajustes");
 const seccionExhibidor = document.getElementById("seccion-exhibidor");
 const muroExhibidor = document.getElementById("muro-exhibidor");
+const EMAIL_ADMIN = "arielriquelme08@gmail.com";
 // Botón de ajustes (engranaje) en la línea del título "Exhibidor": muestra/oculta Cambiar y Quitar.
 const botonAjustesExhibidor = document.getElementById("btn-ajustes-exhibidor");
 const uidPerfil = new URLSearchParams(window.location.search).get("u");
 const INTERCAMBIOS_HABILITADOS = false;
+
+let usuarioAutenticado = null;
+let esUsuarioRoot = false;
+let uidPerfilCargado = null;
 
 function mostrarFotoBotonPerfil(url) {
   if (!fotoBotonPerfil) return;
@@ -498,6 +503,108 @@ function activarGiroLibre(visor, rotor) {
   });
 }
 
+// Compara una copia del artículo sin depender solo del nombre: compraId
+// identifica una copia concreta cuando existe. En artículos antiguos que no
+// tienen compraId usamos id/nombre/número como compatibilidad.
+function coincideArticulo(a, b) {
+  if (!a || !b) return false;
+  if (a.compraId && b.compraId) return a.compraId === b.compraId;
+  return String(a.id || "") === String(b.id || "")
+    && String(a.nombre || "") === String(b.nombre || "")
+    && String(a.numero || "") === String(b.numero || "");
+}
+
+function quitarUnaCoincidencia(articulos, objetivo) {
+  let quitado = false;
+  const lista = (Array.isArray(articulos) ? articulos : []).filter((articulo) => {
+    if (!quitado && coincideArticulo(articulo, objetivo)) {
+      quitado = true;
+      return false;
+    }
+    return true;
+  });
+  return { lista, quitado };
+}
+
+function quitarDelExhibidor(exhibidor, objetivo) {
+  return (Array.isArray(exhibidor) ? exhibidor : []).map((articulo) => (
+    articulo && coincideArticulo(articulo, objetivo) ? null : articulo
+  ));
+}
+
+// El borrado root se hace en una transacción para que la colección privada
+// y la copia pública del muro no queden desincronizadas si falla una escritura.
+async function eliminarArticuloComoRoot(articulo) {
+  if (!esUsuarioRoot || !uidPerfilCargado) {
+    throw new Error("Solo root puede eliminar objetos.");
+  }
+
+  const referenciaUsuario = db.collection("usuarios").doc(uidPerfilCargado);
+  const referenciaPerfil = db.collection("perfilesPublicos").doc(uidPerfilCargado);
+
+  await db.runTransaction(async (transaccion) => {
+    const fichaUsuario = await transaccion.get(referenciaUsuario);
+    const fichaPerfil = await transaccion.get(referenciaPerfil);
+    const datosUsuario = fichaUsuario.exists ? fichaUsuario.data() || {} : {};
+    const datosPerfil = fichaPerfil.exists ? fichaPerfil.data() || {} : {};
+
+    // Los objetos que se abren desde el muro viven en coleccionables.
+    const resultadoUsuario = quitarUnaCoincidencia(datosUsuario.coleccionables, articulo);
+    if (!resultadoUsuario.quitado) {
+      throw new Error("El objeto ya no está en la colección de este usuario.");
+    }
+
+    const resultadoPerfil = quitarUnaCoincidencia(datosPerfil.coleccionables, articulo);
+    const cambiosPerfil = {
+      coleccionables: resultadoPerfil.quitado
+        ? resultadoPerfil.lista
+        : (Array.isArray(datosPerfil.coleccionables) ? datosPerfil.coleccionables : []),
+      exhibidor: quitarDelExhibidor(datosPerfil.exhibidor, articulo),
+      actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    transaccion.update(referenciaUsuario, {
+      coleccionables: resultadoUsuario.lista
+    });
+    transaccion.set(referenciaPerfil, cambiosPerfil, { merge: true });
+  });
+}
+
+function agregarAccionEliminarRoot(contenido, modal, articulo) {
+  if (!esUsuarioRoot || !uidPerfilCargado) return;
+
+  const eliminar = document.createElement("button");
+  eliminar.type = "button";
+  eliminar.className = "boton-comprar boton-eliminar-root";
+  eliminar.textContent = "Eliminar objeto del usuario";
+  eliminar.setAttribute("aria-label", "Eliminar " + (articulo.nombre || "este objeto") + " del usuario");
+
+  eliminar.addEventListener("click", async () => {
+    const nombre = articulo.nombre || "este objeto";
+    const confirmado = window.confirm(
+      "¿Eliminar \"" + nombre + "\" de este usuario?\n\n" +
+      "También se quitará del muro y del exhibidor si estaba allí."
+    );
+    if (!confirmado) return;
+
+    eliminar.disabled = true;
+    eliminar.textContent = "Eliminando...";
+    try {
+      await eliminarArticuloComoRoot(articulo);
+      modal.remove();
+      estadoPerfil.textContent = "Objeto eliminado del usuario.";
+      await cargarPerfil(uidPerfilCargado, usuarioAutenticado);
+    } catch (error) {
+      console.error("Error al eliminar objeto como root:", error);
+      eliminar.disabled = false;
+      eliminar.textContent = "Eliminar objeto del usuario";
+      window.alert("No se pudo eliminar el objeto: " + (error.message || "error desconocido"));
+    }
+  });
+
+  contenido.appendChild(eliminar);
+}
+
 function mostrarDetalleArticulo(articulo, categoria) {
   const modalAnterior = document.querySelector(".modal-detalle-articulo");
   if (modalAnterior) modalAnterior.remove();
@@ -545,6 +652,7 @@ function mostrarDetalleArticulo(articulo, categoria) {
   contenido.classList.add("con-giro");
   contenido.append(visor, tipo, nombre, origen, pistaGiro);
   if (botonReverso) contenido.appendChild(botonReverso);
+  agregarAccionEliminarRoot(contenido, modal, articulo);
   contenido.appendChild(cerrar);
   modal.appendChild(contenido);
   modal.addEventListener("click", (evento) => {
@@ -1930,6 +2038,7 @@ function subirFotoPerfil(archivo, usuario, estadoElemento) {
 }
 
 function cargarPerfil(uid, usuarioActual) {
+  uidPerfilCargado = uid;
   db.collection("perfilesPublicos").doc(uid).get().then((documento) => {
     if (!documento.exists) {
       estadoPerfil.textContent = "Este perfil todavía no está disponible.";
@@ -1960,6 +2069,8 @@ function cargarPerfil(uid, usuarioActual) {
 }
 
 auth.onAuthStateChanged((usuario) => {
+  usuarioAutenticado = usuario;
+  esUsuarioRoot = !!usuario && usuario.email === EMAIL_ADMIN;
   configurarBarraPrincipal(usuario);
   const uidObjetivo = uidPerfil || (usuario && usuario.uid);
   if (!uidObjetivo) {

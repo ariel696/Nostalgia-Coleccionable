@@ -8,10 +8,11 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Mismas fuentes que index.html: Baloo 2 para títulos, Inter para texto. -->
 
-    <link rel="stylesheet" href="css/style.css?v=20260925-5">
+    <link rel="stylesheet" href="css/style.css?v=20261126-2">
 </head>
 
 <body>
@@ -34,6 +35,7 @@
     </header>
 
     <main>
+        <a href="index.html" class="link-volver" style="margin-top: 0; margin-bottom: 16px;">Volver al inicio</a>
         <p>Elige qué paquete coleccionable quieres abrir con tus monedas:</p>
 
         <div id="grilla-productos" class="grilla-productos">
@@ -49,13 +51,11 @@
             -->
             <p id="mensaje-cargando-productos">Cargando productos...</p>
         </div>
-
-        <a href="index.html">Volver al inicio</a>
     </main>
 
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <!--
       NUEVO: tienda.html ahora necesita hablar con Firestore para
       traer la lista de productos, así que sumamos estos 2 SDKs.
@@ -63,7 +63,7 @@
       rápido al panel de administración cuando todavía no hay tiendas.
     -->
 
-    <script src="js/tienda.js?v=20260925-4"></script>
-    <script src="js/musica.js?v=20261119-1"></script>
+    <script defer src="js/tienda.js?v=20261126-2"></script>
+    <script defer src="js/musica.js?v=20261126-1"></script>
 </body>
 </html>

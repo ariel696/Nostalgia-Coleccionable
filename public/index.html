@@ -45,6 +45,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!--
       Estas 3 líneas cargan nuestras 2 fuentes desde Google Fonts:
@@ -62,7 +63,7 @@
       unos milisegundos, pero en celulares con internet lenta se nota.
     -->
 
-    <link rel="stylesheet" href="css/style.css?v=20261119-3">
+    <link rel="stylesheet" href="css/style.css?v=20261126-2">
     <!--
       Conecta este HTML con nuestra hoja de estilos externa.
       - rel="stylesheet" -> le dice al navegador "esto es CSS".
@@ -202,7 +203,7 @@
                 <button id="btn-dinero-diario" class="oculto" type="button">Reclamar dinero diario</button>
                 <p id="estado-dinero-diario" class="texto-ayuda"></p>
                 <div id="campo-referido-logueado" class="campo-referido oculto">
-                    <label for="input-codigo-referido">¿Te invitaron? Ingresa un código de referido o de regalo</label>
+                    <label for="input-codigo-referido">¿Te invitaron? Ingresa un código de referido. De no ser así, este mensaje desaparecerá en 3 días.</label>
                     <div class="fila-referido">
                         <input id="input-codigo-referido" type="text" maxlength="40" autocomplete="off" placeholder="Ej.: ÁRBOL 1, 2, 3">
                         <button id="btn-aplicar-referido" class="boton-secundario" type="button">Canjear</button>
@@ -380,9 +381,9 @@
         -->
     </footer>
 
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <!--
       Estas tres líneas cargan el "SDK" (kit de herramientas) de Firebase
       directamente desde los servidores de Google (esto se llama usar un
@@ -411,9 +412,9 @@
       fallaría con un error de "firebase no está definido".
     -->
 
-    <script src="js/script.js?v=20261119-8"></script>
-    <script src="js/ranking.js?v=20261123-1"></script>
-    <script src="js/musica.js?v=20261119-1"></script>
+    <script defer src="js/script.js?v=20261119-8"></script>
+    <script defer src="js/ranking.js?v=20261123-1"></script>
+    <script defer src="js/musica.js?v=20261126-1"></script>
     <!--
       Conecta este HTML con nuestro archivo de JavaScript externo.
 

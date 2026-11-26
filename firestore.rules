@@ -90,6 +90,8 @@ service cloud.firestore {
         && request.resource.data.referidoUid == request.auth.uid
         && request.resource.data.referrerUid != request.auth.uid
         && get(/databases/$(database)/documents/codigosReferido/$(request.resource.data.codigo)).data.uid == request.resource.data.referrerUid
+        // Solo durante los 3 primeros días desde la creación de la cuenta.
+        && get(/databases/$(database)/documents/usuarios/$(referidoUid)).data.creadoEn + duration.value(3, 'd') > request.time
         && !exists(/databases/$(database)/documents/referidos/$(referidoUid));
       allow update: if isAdmin();
       // Si root formateó la cuenta, el usuario puede limpiar únicamente

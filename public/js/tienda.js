@@ -32,11 +32,28 @@ const grillaProductos = document.getElementById("grilla-productos");
 const IMAGEN_PRODUCTO_RESPALDO = "assets/img/cheetos-tazos.png";
 
 let usuarioActual = null;
+let ultimaColeccion = null;
+
+function optimizarImagenCloudinary(url, ancho) {
+  if (typeof url !== "string" || !url.includes("res.cloudinary.com")) return url;
+  const marca = "/upload/";
+  const posicion = url.indexOf(marca);
+  if (posicion < 0) return url;
+
+  const resto = url.slice(posicion + marca.length);
+  const primerSegmento = resto.split("/")[0] || "";
+  if (primerSegmento.includes(",") || primerSegmento.startsWith("f_")) return url;
+
+  return url.slice(0, posicion + marca.length)
+    + "f_auto,q_auto,w_" + ancho + ",c_limit/"
+    + resto;
+}
 
 // -----------------------------------------------------------------
 // 3) FUNCIÓN: dibujar una tarjeta por cada producto
 // -----------------------------------------------------------------
 function dibujarProductos(coleccion) {
+  ultimaColeccion = coleccion;
   // Vaciamos la grilla (por ahora tiene el mensaje de "Cargando...").
   grillaProductos.innerHTML = "";
 
@@ -59,7 +76,7 @@ function dibujarProductos(coleccion) {
     return;
   }
 
-  coleccion.forEach((documento) => {
+  coleccion.forEach((documento, indice) => {
     // "documento.id" es el id del documento en Firestore (el "slug"
     // que armamos en admin.js, ej: "dragon-ball-z-cartas").
     // "documento.data()" nos da el objeto con nombre/imagen/opciones.
@@ -71,9 +88,12 @@ function dibujarProductos(coleccion) {
     tarjeta.href = "producto.html?id=" + documento.id;
 
     const imagen = document.createElement("img");
-    imagen.src = datos.imagen || IMAGEN_PRODUCTO_RESPALDO;
+    imagen.src = optimizarImagenCloudinary(datos.imagen, 640) || IMAGEN_PRODUCTO_RESPALDO;
     imagen.alt = datos.nombre;
     imagen.className = "imagen-producto";
+    imagen.loading = indice === 0 ? "eager" : "lazy";
+    imagen.decoding = "async";
+    if (indice === 0) imagen.fetchPriority = "high";
     imagen.onerror = () => {
       imagen.src = IMAGEN_PRODUCTO_RESPALDO;
     };
@@ -100,7 +120,14 @@ function cargarProductos() {
 // -----------------------------------------------------------------
 // 4) TRAER LOS PRODUCTOS APENAS CARGA LA PÁGINA
 // -----------------------------------------------------------------
+// El catálogo es público: no hay que esperar a Firebase Auth para
+// mostrarlo. Esperar aquí hacía que al volver desde producto.html la
+// tienda quedara varios segundos en "Cargando productos..." en móviles.
+cargarProductos();
+
 auth.onAuthStateChanged((usuario) => {
   usuarioActual = usuario;
-  cargarProductos();
+  // Si la primera carga ya terminó, solo redibujamos para actualizar
+  // el acceso administrativo cuando corresponda.
+  if (ultimaColeccion) dibujarProductos(ultimaColeccion);
 });

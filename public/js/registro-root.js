@@ -123,6 +123,12 @@
     const acciones = document.createElement("div");
     acciones.className = "registro-root-acciones";
 
+    const abrirMuro = document.createElement("a");
+    abrirMuro.className = "boton-secundario enlace-muro-root";
+    abrirMuro.href = "perfil.html?u=" + encodeURIComponent(u.id);
+    abrirMuro.textContent = "Abrir muro";
+    abrirMuro.setAttribute("aria-label", "Abrir el muro de " + nombreVisible(d));
+
     const etiqueta = document.createElement("label");
     etiqueta.className = "registro-root-monto-label";
     etiqueta.textContent = "Monedas:";
@@ -159,7 +165,7 @@
       if (confirmado) await reiniciarDatosDeJuego(u.id);
     });
 
-    acciones.append(etiqueta, dar, quitar, reiniciar);
+    acciones.append(abrirMuro, etiqueta, dar, quitar, reiniciar);
     return acciones;
   }
 
